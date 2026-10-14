@@ -1006,10 +1006,12 @@ function showBanner(title, sub, opts = {}) {
   $("#banner-title").textContent = title;
   $("#banner-sub").textContent = sub || "";
   const gif = $("#banner-gif");
-  const src = opts.image || (opts.salute ? "boss-clear.png" : "");
+  const src = opts.image || (opts.salute ? "boss-clear.gif" : "");
   if (src) {
     gif.hidden = false;
     gif.alt = opts.alt || t("salute.alt");
+    gif.removeAttribute("src");
+    void gif.offsetWidth;
     gif.src = `${src}?t=${Date.now()}`;
   } else if (gif) {
     gif.hidden = true;
@@ -1025,7 +1027,7 @@ function showBanner(title, sub, opts = {}) {
   ui.bannerTimer = setTimeout(() => {
     banner.classList.remove("show");
     if (gif) gif.hidden = true;
-  }, src ? 3400 : 1700);
+  }, opts.salute ? 4500 : src ? 3400 : 1700);
 }
 
 function cancelAuto() {
