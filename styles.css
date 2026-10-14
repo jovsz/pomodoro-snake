@@ -841,6 +841,16 @@ input:focus { border-color: var(--phosphor); }
   text-shadow: 0 0 18px var(--phosphor);
 }
 .banner p { margin: 8px 0 0; letter-spacing: 0.12em; color: var(--muted); }
+.banner-gif {
+  display: block;
+  width: auto;
+  max-width: min(420px, 72vw);
+  max-height: 240px;
+  margin: 0 auto 14px;
+  border: 1px solid var(--line);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--phosphor) 40%, transparent);
+}
+.banner-gif[hidden] { display: none !important; }
 
 .modal {
   position: absolute;

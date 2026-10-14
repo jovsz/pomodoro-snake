@@ -574,9 +574,19 @@ function glitch() {
   }, 45);
 }
 
-function showBanner(title, sub) {
+function showBanner(title, sub, opts = {}) {
   $("#banner-title").textContent = title;
   $("#banner-sub").textContent = sub || "";
+  const gif = $("#banner-gif");
+  const src = opts.image || (opts.salute ? "boss-clear.png" : "");
+  if (src) {
+    gif.hidden = false;
+    gif.alt = opts.alt || "Saludo al cerrar la infiltración";
+    gif.src = `${src}?t=${Date.now()}`;
+  } else if (gif) {
+    gif.hidden = true;
+    gif.removeAttribute("src");
+  }
   const banner = $("#banner");
   banner.classList.add("show");
   const screen = $("#screen");
@@ -584,7 +594,10 @@ function showBanner(title, sub) {
   void screen.offsetWidth;
   screen.classList.add("flashing");
   clearTimeout(ui.bannerTimer);
-  ui.bannerTimer = setTimeout(() => banner.classList.remove("show"), 1700);
+  ui.bannerTimer = setTimeout(() => {
+    banner.classList.remove("show");
+    if (gif) gif.hidden = true;
+  }, src ? 3400 : 1700);
 }
 
 function cancelAuto() {
@@ -698,7 +711,7 @@ function announce(finished, result) {
   const line = result?.closed
     ? `Objetivo cumplido · ${result.title}`
     : (result?.extraSeconds ? `${sub} Incluye +${fmtSpan(result.extraSeconds)} añadidos.` : sub);
-  showBanner(title, line);
+  showBanner(title, line, { salute: finished === "focus" });
   say(result?.closed ? `Objetivo cumplido: ${result.title}` : sub);
   playClear(finished);
   notify(title, line);
@@ -737,6 +750,7 @@ function start(opts = {}) {
   } else {
     say(PHASE[state.phase].start);
   }
+  const clip = freshClip();
   state.running = true;
   state.endsAt = Date.now() + state.remaining * 1000;
   if (!state.planned) state.planned = phaseSeconds(state.phase);
@@ -744,6 +758,30 @@ function start(opts = {}) {
   playStart();
   renderStatic();
   paintTime();
+  if (clip) showPhaseClip(clip);
+}
+
+const PHASE_CLIP = {
+  focus: { title: "INFILTRACIÓN", image: "focus-snake.gif", alt: "Infiltración" },
+  short: { title: "PAUSA TÁCTICA", image: "pause-snake.gif", alt: "Pausa táctica" },
+  long: { title: "EXTRACCIÓN", image: "extract-snake.gif", alt: "Extracción" },
+};
+
+function freshClip() {
+  if (!PHASE_CLIP[state.phase]) return "";
+  const full = state.planned || phaseSeconds(state.phase);
+  return state.remaining >= full ? state.phase : "";
+}
+
+function showPhaseClip(phase) {
+  const clip = PHASE_CLIP[phase];
+  if (!clip) return;
+  const reveal = () => {
+    if (state.phase !== phase || !state.running) return;
+    showBanner(clip.title, PHASE[phase].start, { image: clip.image, alt: clip.alt });
+  };
+  if ($("#banner").classList.contains("show")) setTimeout(reveal, 2000);
+  else reveal();
 }
 
 function pause() {
