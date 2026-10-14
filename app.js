@@ -5,30 +5,458 @@ const RING_R = 92;
 const RING_C = 2 * Math.PI * RING_R;
 
 const PHASE = {
-  focus: {
-    label: "INFILTRACIÓN",
-    freq: "140.85",
-    line: "Canal listo. Elige un blanco y entra.",
-    start: "Infiltración en curso. Corta el ruido.",
-    banner: ["FASE CLEAR", "Infiltración registrada"],
+  focus: { freq: "140.85" },
+  short: { freq: "141.12" },
+  long: { freq: "141.80" },
+};
+
+const PHASE_CANON = {
+  focus: "INFILTRACIÓN",
+  short: "PAUSA TÁCTICA",
+  long: "EXTRACCIÓN",
+};
+
+const PRIO = { routine: "routine", priority: "priority", urgent: "urgent" };
+
+const LANG_KEY = "codec-pomodoro-lang";
+
+const COPY = {
+  en: {
+    "boot.1": "ESTABLISHING LINK",
+    "boot.2": "CHANNEL CIPHER · OK",
+    "boot.3": "TACTICAL RADAR · OK",
+    "boot.4": "MISSION LOG · OK",
+    "boot.enter": "PRESS TO ENTER",
+    "eyebrow.callsign": "CALL SIGN",
+    "eyebrow.freq": "FREQUENCY",
+    "aria.sound": "Codec sound",
+    "aria.settings": "Settings",
+    "lang.aria": "Language",
+    voice: "VOICE",
+    "goal.title": "Daily goal",
+    radar: "TACTICAL RADAR",
+    "aria.timerSection": "Timer",
+    "aria.timer": "Pomodoro timer",
+    "aria.phase": "Phase",
+    "phase.focus.label": "INFILTRATION",
+    "phase.short.label": "TACTICAL PAUSE",
+    "phase.long.label": "EXTRACTION",
+    "phase.extra.label": "ADDED TIME",
+    "phase.focus.line": "Channel open. Pick a target and move in.",
+    "phase.short.line": "Short pause. Don't open another front.",
+    "phase.long.line": "Long cycle. Step away from the objective.",
+    "phase.focus.start": "Infiltration underway. Cut the noise.",
+    "phase.short.start": "Tactical pause. Get your pulse back.",
+    "phase.long.start": "Extraction. The cycle is closed.",
+    "phase.focus.banner0": "PHASE CLEAR",
+    "phase.focus.banner1": "Infiltration logged",
+    "phase.short.banner0": "CHANNEL CLEAR",
+    "phase.short.banner1": "The pause is over",
+    "phase.long.banner0": "CYCLE CLOSED",
+    "phase.long.banner1": "Extraction complete",
+    "salute.alt": "Salute when the infiltration closes",
+    "timer.remaining": "{label}, {time} remaining",
+    "target": "TARGET: {title}",
+    "target.none": "TARGET: —",
+    start: "START",
+    pause: "PAUSE",
+    abort: "ABORT",
+    skip: "SKIP",
+    int: "INTERNAL",
+    ext: "EXTERNAL",
+    extend: "EXTEND",
+    "block.extra": "+{time} ON THIS BLOCK",
+    activities: "ACTIVITIES",
+    "aria.activities": "Activities",
+    "aria.views": "Views",
+    "tab.open": "OPEN {n}",
+    "tab.done": "DONE {n}",
+    "tab.log": "LOG",
+    "tab.month": "MONTH",
+    purge: "PURGE",
+    "purge.confirm": "CONFIRM",
+    "aria.monthPrev": "Previous month",
+    "aria.monthNext": "Next month",
+    activity: "ACTIVITY",
+    note: "FIELD NOTE",
+    "ph.activity": "What you are about to run…",
+    "ph.note": "Optional",
+    "ph.field": "Field note",
+    pomodoros: "POMODOROS",
+    "aria.less": "Fewer pomodoros",
+    "aria.more": "More pomodoros",
+    "aria.priority": "Priority",
+    "prio.routine": "ROUTINE",
+    "prio.priority": "PRIORITY",
+    "prio.urgent": "URGENT",
+    register: "REGISTER",
+    "stat.cycle": "CYCLE",
+    "stat.today": "TODAY",
+    "stat.focus": "FOCUS",
+    "stat.streak": "STREAK",
+    "stat.service": "SERVICE",
+    keys: "SPACE START · R ABORT · S SKIP · I/E INTERFERENCE · N ACTIVITY · 1 2 3 PHASE",
+    "bezel.db": "DATABASE",
+    "settings.title": "SYSTEM",
+    "settings.sub": "LINK PARAMETERS",
+    "set.callsign": "Call sign",
+    "set.focus": "Infiltration (min)",
+    "set.short": "Tactical pause (min)",
+    "set.long": "Extraction (min)",
+    "set.cycle": "Pomodoros per cycle",
+    "set.goal": "Daily goal",
+    "set.auto": "Chain the next phase",
+    "set.sound": "Codec sound",
+    "set.notify": "Desktop alert",
+    "set.close": "Close the activity when the estimate is met",
+    "set.strict": "Require a target before infiltrating",
+    close: "CLOSE",
+    save: "SAVE",
+    "perm.none": "This browser does not show desktop alerts.",
+    "perm.denied": "Desktop alerts are blocked in the browser.",
+    "perm.granted": "Desktop alerts are allowed.",
+    "perm.ask": "Turning alerts on will ask the browser for permission.",
+    "perm.denied2": "Alert not allowed.",
+    noscript: "Enable JavaScript to use the CODEC link.",
+    "status.live": "LIVE",
+    "status.hold": "HOLD",
+    "status.ready": "READY",
+    "alert.tag": "! ALERT !",
+    "alert.caution": "CAUTION",
+    untitled: "NO TARGET",
+    "clear.mark": " · CLEAR",
+    "aria.done": "Activity done",
+    "aria.lock": "Release target",
+    "aria.unlock": "Set target",
+    "act.edit": "EDT",
+    "act.min": "MIN",
+    "act.clear": "CLR",
+    "act.reopen": "OPEN",
+    "act.del": "DEL",
+    "act.yes": "YES",
+    "act.ok": "OK",
+    "act.no": "NO",
+    "empty.done": "No activities finished.",
+    "empty.open": "No objectives on the channel. Register an activity.",
+    "empty.log": "No entries on the channel.",
+    today: "TODAY",
+    yesterday: "YESTERDAY",
+    "block.one": "block",
+    "block.many": "blocks",
+    "heat.none": "{when}: no time",
+    "heat.tip": "{when}: {time} · {blocks}{extra}",
+    "heat.added": " · +{time} added",
+    "heat.aria": "Time history by day",
+    "heat.less": "LESS",
+    "heat.more": "MORE",
+    "metric.time": "TIME",
+    "metric.added": "ADDED",
+    "metric.blocks": "BLOCKS",
+    "metric.activities": "ACTIVITIES",
+    "metric.loading": "Reading the month…",
+    "metric.error": "No link to the metrics.",
+    "metric.emptyDay": "No time logged this day.",
+    "metric.emptyMonth": "No time logged this month.",
+    "metric.estimate": "estimated {n}",
+    "metric.includes": "includes +{time}",
+    "say.extend.only": "Extra time is added during an infiltration.",
+    "say.extend.max": "The block is already at the maximum.",
+    "say.extend.added": "+{time} on the block. They count when you close it.",
+    "say.minutes": "+{minutes} min added to {title}. The month includes them.",
+    "say.purge.fail": "Could not purge the history.",
+    "say.purge.ok": "History purged.",
+    "say.db.fail": "The database did not confirm the last entry.",
+    "say.objective": "Objective complete · {title}",
+    "say.objective.short": "Objective complete: {title}",
+    "say.extra.included": "{sub} Includes +{time} added.",
+    "say.strict": "Assign a target before you infiltrate.",
+    "say.noTarget": "No target assigned. The block will count as general time.",
+    "say.pause": "Clock on hold. The mission stays open.",
+    "say.abort": "Counter aborted.",
+    "say.skip": "Phase skipped. Nothing logged.",
+    "say.inter.only": "Interference is marked only during a running infiltration.",
+    "say.inter.internal": "Internal interference. Hold the objective.",
+    "say.inter.external": "External interference. Stay on this channel.",
+    "say.pinned": "Target set: {title}",
+    "say.queued": "Activity queued.",
+    "say.deleted": "Activity removed from the log.",
+    "say.done": "Activity marked done.",
+    "say.reopened": "Activity reopened.",
+    "say.needTitle": "Name the activity.",
+    "say.updated": "Activity updated.",
+    "say.reopenFirst": "Reopen the activity if you want to set it as the target.",
+    "say.unlocked": "Target released.",
+    "say.saved.running": "Parameters saved. The running clock does not change.",
+    "say.saved": "Parameters saved.",
+    "db.offline": "No link to the database.",
   },
-  short: {
-    label: "PAUSA TÁCTICA",
-    freq: "141.12",
-    line: "Pausa corta. No abras otro frente.",
-    start: "Pausa táctica. Recupera el pulso.",
-    banner: ["CANAL LIBRE", "La pausa terminó"],
-  },
-  long: {
-    label: "EXTRACCIÓN",
-    freq: "141.80",
-    line: "Ciclo largo. Aléjate del objetivo.",
-    start: "Extracción. El ciclo quedó cerrado.",
-    banner: ["CICLO CERRADO", "Extracción completa"],
+  es: {
+    "boot.1": "ESTABLECIENDO ENLACE",
+    "boot.2": "CIFRADO DEL CANAL · OK",
+    "boot.3": "RADAR TÁCTICO · OK",
+    "boot.4": "REGISTRO DE MISIÓN · OK",
+    "boot.enter": "PULSA PARA ENTRAR",
+    "eyebrow.callsign": "INDICATIVO",
+    "eyebrow.freq": "FRECUENCIA",
+    "aria.sound": "Sonido del codec",
+    "aria.settings": "Ajustes",
+    "lang.aria": "Idioma",
+    voice: "VOZ",
+    "goal.title": "Meta diaria",
+    radar: "RADAR TÁCTICO",
+    "aria.timerSection": "Temporizador",
+    "aria.timer": "Temporizador pomodoro",
+    "aria.phase": "Fase",
+    "phase.focus.label": "INFILTRACIÓN",
+    "phase.short.label": "PAUSA TÁCTICA",
+    "phase.long.label": "EXTRACCIÓN",
+    "phase.extra.label": "TIEMPO AÑADIDO",
+    "phase.focus.line": "Canal listo. Elige un blanco y entra.",
+    "phase.short.line": "Pausa corta. No abras otro frente.",
+    "phase.long.line": "Ciclo largo. Aléjate del objetivo.",
+    "phase.focus.start": "Infiltración en curso. Corta el ruido.",
+    "phase.short.start": "Pausa táctica. Recupera el pulso.",
+    "phase.long.start": "Extracción. El ciclo quedó cerrado.",
+    "phase.focus.banner0": "FASE CLEAR",
+    "phase.focus.banner1": "Infiltración registrada",
+    "phase.short.banner0": "CANAL LIBRE",
+    "phase.short.banner1": "La pausa terminó",
+    "phase.long.banner0": "CICLO CERRADO",
+    "phase.long.banner1": "Extracción completa",
+    "salute.alt": "Saludo al cerrar la infiltración",
+    "timer.remaining": "{label}, {time} restantes",
+    "target": "BLANCO: {title}",
+    "target.none": "BLANCO: —",
+    start: "INICIAR",
+    pause: "PAUSA",
+    abort: "ABORTAR",
+    skip: "SALTAR",
+    int: "INTERNA",
+    ext: "EXTERNA",
+    extend: "ALARGAR",
+    "block.extra": "+{time} EN ESTE BLOQUE",
+    activities: "ACTIVIDADES",
+    "aria.activities": "Actividades",
+    "aria.views": "Vistas",
+    "tab.open": "ABIERTAS {n}",
+    "tab.done": "LISTAS {n}",
+    "tab.log": "REGISTRO",
+    "tab.month": "MES",
+    purge: "PURGAR",
+    "purge.confirm": "CONFIRMAR",
+    "aria.monthPrev": "Mes anterior",
+    "aria.monthNext": "Mes siguiente",
+    activity: "ACTIVIDAD",
+    note: "NOTA DE CAMPO",
+    "ph.activity": "Qué vas a ejecutar…",
+    "ph.note": "Opcional",
+    "ph.field": "Nota de campo",
+    pomodoros: "POMODOROS",
+    "aria.less": "Menos pomodoros",
+    "aria.more": "Más pomodoros",
+    "aria.priority": "Prioridad",
+    "prio.routine": "RUTINA",
+    "prio.priority": "PRIORIDAD",
+    "prio.urgent": "URGENTE",
+    register: "REGISTRAR",
+    "stat.cycle": "CICLO",
+    "stat.today": "HOY",
+    "stat.focus": "FOCO",
+    "stat.streak": "RACHA",
+    "stat.service": "SERVICIO",
+    keys: "ESPACIO INICIAR · R ABORTAR · S SALTAR · I/E INTERFERENCIA · N ACTIVIDAD · 1 2 3 FASE",
+    "bezel.db": "BASE DE DATOS",
+    "settings.title": "SISTEMA",
+    "settings.sub": "PARÁMETROS DEL ENLACE",
+    "set.callsign": "Indicativo",
+    "set.focus": "Infiltración (min)",
+    "set.short": "Pausa táctica (min)",
+    "set.long": "Extracción (min)",
+    "set.cycle": "Pomodoros por ciclo",
+    "set.goal": "Meta diaria",
+    "set.auto": "Encadenar la fase siguiente",
+    "set.sound": "Sonido del codec",
+    "set.notify": "Aviso de escritorio",
+    "set.close": "Cerrar actividad al cumplir la estimación",
+    "set.strict": "Exigir blanco antes de infiltrar",
+    close: "CERRAR",
+    save: "GRABAR",
+    "perm.none": "Este navegador no muestra avisos de escritorio.",
+    "perm.denied": "Los avisos están bloqueados en el navegador.",
+    "perm.granted": "Avisos de escritorio autorizados.",
+    "perm.ask": "Al activar los avisos, el navegador pedirá permiso.",
+    "perm.denied2": "Aviso no autorizado.",
+    noscript: "Activa JavaScript para usar el enlace CODEC.",
+    "status.live": "EN CURSO",
+    "status.hold": "EN ESPERA",
+    "status.ready": "LISTO",
+    "alert.tag": "! ALERTA !",
+    "alert.caution": "PRECAUCIÓN",
+    untitled: "SIN BLANCO",
+    "clear.mark": " · CLEAR",
+    "aria.done": "Actividad lista",
+    "aria.lock": "Liberar blanco",
+    "aria.unlock": "Fijar blanco",
+    "act.edit": "EDT",
+    "act.min": "MIN",
+    "act.clear": "CLR",
+    "act.reopen": "REA",
+    "act.del": "DEL",
+    "act.yes": "SI",
+    "act.ok": "OK",
+    "act.no": "NO",
+    "empty.done": "Ninguna actividad lista.",
+    "empty.open": "Sin objetivos en el canal. Registra una actividad.",
+    "empty.log": "Sin registros en el canal.",
+    today: "HOY",
+    yesterday: "AYER",
+    "block.one": "bloque",
+    "block.many": "bloques",
+    "heat.none": "{when}: sin tiempo",
+    "heat.tip": "{when}: {time} · {blocks}{extra}",
+    "heat.added": " · +{time} añadidos",
+    "heat.aria": "Historial de tiempo por día",
+    "heat.less": "MENOS",
+    "heat.more": "MÁS",
+    "metric.time": "TIEMPO",
+    "metric.added": "AÑADIDO",
+    "metric.blocks": "BLOQUES",
+    "metric.activities": "ACTIVIDADES",
+    "metric.loading": "Leyendo el mes…",
+    "metric.error": "Sin enlace con las métricas.",
+    "metric.emptyDay": "Sin tiempo registrado este día.",
+    "metric.emptyMonth": "Sin tiempo registrado en este mes.",
+    "metric.estimate": "estimado {n}",
+    "metric.includes": "incluye +{time}",
+    "say.extend.only": "El tiempo extra se suma durante la infiltración.",
+    "say.extend.max": "El bloque ya está al máximo.",
+    "say.extend.added": "+{time} en el bloque. Entran al mes cuando lo cierres.",
+    "say.minutes": "+{minutes} min añadidos a {title}. El mes los incluye.",
+    "say.purge.fail": "No se pudo purgar el historial.",
+    "say.purge.ok": "Historial purgado.",
+    "say.db.fail": "La base no confirmó el último registro.",
+    "say.objective": "Objetivo cumplido · {title}",
+    "say.objective.short": "Objetivo cumplido: {title}",
+    "say.extra.included": "{sub} Incluye +{time} añadidos.",
+    "say.strict": "Asigna un blanco antes de infiltrarte.",
+    "say.noTarget": "Sin blanco asignado. El bloque contará como tiempo general.",
+    "say.pause": "Reloj en espera. La misión sigue abierta.",
+    "say.abort": "Contador abortado.",
+    "say.skip": "Fase saltada. Sin registro.",
+    "say.inter.only": "Las interferencias solo se marcan en infiltración en curso.",
+    "say.inter.internal": "Interferencia interna. Mantén el objetivo.",
+    "say.inter.external": "Interferencia externa. No cambies de canal.",
+    "say.pinned": "Blanco fijado: {title}",
+    "say.queued": "Actividad en cola.",
+    "say.deleted": "Actividad retirada del registro.",
+    "say.done": "Actividad marcada como lista.",
+    "say.reopened": "Actividad reabierta.",
+    "say.needTitle": "Identifica la actividad.",
+    "say.updated": "Actividad actualizada.",
+    "say.reopenFirst": "Reabre la actividad si quieres fijarla como blanco.",
+    "say.unlocked": "Blanco liberado.",
+    "say.saved.running": "Parámetros grabados. El reloj en curso no cambia.",
+    "say.saved": "Parámetros grabados.",
+    "db.offline": "Sin enlace con la base de datos.",
   },
 };
 
-const PRIO = { routine: "RUTINA", priority: "PRIORIDAD", urgent: "URGENTE" };
+const LISTS = {
+  en: {
+    dows: ["M", "T", "W", "T", "F", "S", "S"],
+    months: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  },
+  es: {
+    dows: ["L", "M", "X", "J", "V", "S", "D"],
+    months: ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"],
+  },
+};
+
+const TITLE_KEYS = {
+  "Sin blanco": "untitled",
+  "No target": "untitled",
+  "NO TARGET": "untitled",
+  "SIN BLANCO": "untitled",
+  "INFILTRACIÓN": "phase.focus.label",
+  INFILTRATION: "phase.focus.label",
+  "PAUSA TÁCTICA": "phase.short.label",
+  "TACTICAL PAUSE": "phase.short.label",
+  "EXTRACCIÓN": "phase.long.label",
+  EXTRACTION: "phase.long.label",
+};
+
+let lang = "en";
+try {
+  lang = localStorage.getItem(LANG_KEY) === "es" ? "es" : "en";
+} catch { /* private mode */ }
+
+let stateReady = false;
+
+function t(key, vars) {
+  const pack = COPY[lang] || COPY.en;
+  let text = pack[key] ?? COPY.en[key] ?? key;
+  if (vars) {
+    Object.entries(vars).forEach(([name, value]) => {
+      text = text.replaceAll(`{${name}}`, value);
+    });
+  }
+  return text;
+}
+
+function localeTag() {
+  return lang === "es" ? "es" : "en";
+}
+
+function phaseText(phase) {
+  return {
+    label: t(`phase.${phase}.label`),
+    freq: PHASE[phase].freq,
+    line: t(`phase.${phase}.line`),
+    start: t(`phase.${phase}.start`),
+    banner: [t(`phase.${phase}.banner0`), t(`phase.${phase}.banner1`)],
+  };
+}
+
+function displayTitle(title) {
+  const key = TITLE_KEYS[title];
+  return key ? t(key) : title;
+}
+
+function applyChrome() {
+  document.documentElement.lang = localeTag();
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  document.querySelectorAll("[data-lang]").forEach((button) => {
+    const on = button.dataset.lang === lang;
+    button.classList.toggle("is-on", on);
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  const gif = $("#banner-gif");
+  if (gif) gif.alt = t("salute.alt");
+}
+
+function setLang(next) {
+  lang = next === "es" ? "es" : "en";
+  try { localStorage.setItem(LANG_KEY, lang); } catch { /* private mode */ }
+  applyChrome();
+  if (!stateReady) return;
+  renderStatic();
+  renderLists();
+  paintTime();
+  paintClock();
+  $("#codec").textContent = dbOnline ? phaseText(state.phase).line : t("db.offline");
+  if (!$("#settings").hidden) openSettings();
+}
 
 const DEFAULTS = {
   settings: {
@@ -159,7 +587,7 @@ function monthRange(key) {
 
 function monthLabel(key) {
   const [year, month] = key.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("es", { month: "long", year: "numeric" }).toUpperCase();
+  return new Date(year, month - 1, 1).toLocaleDateString(localeTag(), { month: "long", year: "numeric" }).toUpperCase();
 }
 
 function dayKey(date) {
@@ -200,7 +628,7 @@ function timeZone() {
 }
 
 function blockLabel(count) {
-  return `${count} ${count === 1 ? "bloque" : "bloques"}`;
+  return `${count} ${count === 1 ? t("block.one") : t("block.many")}`;
 }
 
 function heatLevel(seconds) {
@@ -212,20 +640,20 @@ function heatLevel(seconds) {
 }
 
 function heatTip(date, info) {
-  const when = date.toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
-  if (!info || info.seconds <= 0) return `${when}: sin tiempo`;
-  const extra = info.addedSeconds > 0 ? ` · +${fmtLong(info.addedSeconds)} añadidos` : "";
-  return `${when}: ${fmtLong(info.seconds)} · ${blockLabel(info.blocks)}${extra}`;
+  const when = date.toLocaleDateString(localeTag(), { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
+  if (!info || info.seconds <= 0) return t("heat.none", { when });
+  const extra = info.addedSeconds > 0 ? t("heat.added", { time: fmtLong(info.addedSeconds) }) : "";
+  return t("heat.tip", { when, time: fmtLong(info.seconds), blocks: blockLabel(info.blocks), extra });
 }
 
 function extendBlock(minutes) {
   if (state.phase !== "focus") {
-    say("El tiempo extra se suma durante la infiltración.");
+    say(t("say.extend.only"));
     return;
   }
   const room = 180 * 60 - state.planned;
   if (room < 60) {
-    say("El bloque ya está al máximo.");
+    say(t("say.extend.max"));
     return;
   }
   const seconds = Math.min(minutes * 60, room);
@@ -236,7 +664,7 @@ function extendBlock(minutes) {
   save();
   renderStatic();
   paintTime();
-  say(`+${fmtSpan(seconds)} en el bloque. Entran al mes cuando lo cierres.`);
+  say(t("say.extend.added", { time: fmtSpan(seconds) }));
 }
 
 function addMinutes(id, minutes) {
@@ -256,7 +684,7 @@ function addMinutes(id, minutes) {
   });
   ui.adding = null;
   save();
-  say(`+${minutes} min añadidos a ${mission.title}. El mes los incluye.`);
+  say(t("say.minutes", { minutes, title: mission.title }));
   renderStatic();
   renderLists();
 }
@@ -304,9 +732,9 @@ function purgeHistory() {
     await persist(snapshot);
     if (ui.filter === "metrics") await loadMetrics();
   }).catch(() => {
-    say("No se pudo purgar el historial.");
+    say(t("say.purge.fail"));
   });
-  say("Historial purgado.");
+  say(t("say.purge.ok"));
   renderStatic();
   renderLists();
 }
@@ -365,7 +793,7 @@ function save() {
       if (ui.filter === "metrics") return loadMetrics();
     })
     .catch(() => {
-      say("La base no confirmó el último registro.");
+      say(t("say.db.fail"));
     });
 }
 
@@ -581,7 +1009,7 @@ function showBanner(title, sub, opts = {}) {
   const src = opts.image || (opts.salute ? "boss-clear.png" : "");
   if (src) {
     gif.hidden = false;
-    gif.alt = opts.alt || "Saludo al cerrar la infiltración";
+    gif.alt = opts.alt || t("salute.alt");
     gif.src = `${src}?t=${Date.now()}`;
   } else if (gif) {
     gif.hidden = true;
@@ -674,7 +1102,7 @@ function goNext({ record, endedAt }) {
   else if (record) {
     pushHistory({
       phase: finished,
-      title: PHASE[finished].label,
+      title: PHASE_CANON[finished],
       seconds: state.planned || phaseSeconds(finished),
       at: endedAt,
       kind: "block",
@@ -707,12 +1135,13 @@ function goNext({ record, endedAt }) {
 }
 
 function announce(finished, result) {
-  const [title, sub] = PHASE[finished].banner;
+  const copy = phaseText(finished);
+  const [title, sub] = copy.banner;
   const line = result?.closed
-    ? `Objetivo cumplido · ${result.title}`
-    : (result?.extraSeconds ? `${sub} Incluye +${fmtSpan(result.extraSeconds)} añadidos.` : sub);
+    ? t("say.objective", { title: result.title })
+    : (result?.extraSeconds ? t("say.extra.included", { sub, time: fmtSpan(result.extraSeconds) }) : sub);
   showBanner(title, line, { salute: finished === "focus" });
-  say(result?.closed ? `Objetivo cumplido: ${result.title}` : sub);
+  say(result?.closed ? t("say.objective.short", { title: result.title }) : sub);
   playClear(finished);
   notify(title, line);
 }
@@ -741,14 +1170,14 @@ function start(opts = {}) {
   if (state.remaining <= 0) state.remaining = phaseSeconds(state.phase);
   if (state.phase === "focus" && !state.activeMissionId) {
     if (state.settings.strict) {
-      say("Asigna un blanco antes de infiltrarte.");
+      say(t("say.strict"));
       shake($("#composer"));
       $("#task-title").focus();
       return;
     }
-    say("Sin blanco asignado. El bloque contará como tiempo general.");
+    say(t("say.noTarget"));
   } else {
-    say(PHASE[state.phase].start);
+    say(phaseText(state.phase).start);
   }
   const clip = freshClip();
   state.running = true;
@@ -762,9 +1191,9 @@ function start(opts = {}) {
 }
 
 const PHASE_CLIP = {
-  focus: { title: "INFILTRACIÓN", image: "focus-snake.gif", alt: "Infiltración" },
-  short: { title: "PAUSA TÁCTICA", image: "pause-snake.gif", alt: "Pausa táctica" },
-  long: { title: "EXTRACCIÓN", image: "extract-snake.gif", alt: "Extracción" },
+  focus: { image: "focus-snake.gif" },
+  short: { image: "pause-snake.gif" },
+  long: { image: "extract-snake.gif" },
 };
 
 function freshClip() {
@@ -778,7 +1207,8 @@ function showPhaseClip(phase) {
   if (!clip) return;
   const reveal = () => {
     if (state.phase !== phase || !state.running) return;
-    showBanner(clip.title, PHASE[phase].start, { image: clip.image, alt: clip.alt });
+    const copy = phaseText(phase);
+    showBanner(copy.label, copy.start, { image: clip.image, alt: copy.label });
   };
   if ($("#banner").classList.contains("show")) setTimeout(reveal, 2000);
   else reveal();
@@ -791,7 +1221,7 @@ function pause() {
   state.running = false;
   state.endsAt = null;
   save();
-  say("Reloj en espera. La misión sigue abierta.");
+  say(t("say.pause"));
   renderStatic();
   paintTime();
 }
@@ -810,7 +1240,7 @@ function abortTimer() {
   state.blockExtra = 0;
   state.sessionInterrupts = { internal: 0, external: 0 };
   save();
-  say("Contador abortado.");
+  say(t("say.abort"));
   renderStatic();
   paintTime();
 }
@@ -821,7 +1251,7 @@ function skip() {
   state.endsAt = null;
   goNext({ record: false });
   save();
-  say("Fase saltada. Sin registro.");
+  say(t("say.skip"));
   glitch();
   renderStatic();
   paintTime();
@@ -839,7 +1269,7 @@ function selectPhase(phase) {
   state.blockExtra = 0;
   state.sessionInterrupts = { internal: 0, external: 0 };
   save();
-  say(PHASE[phase].line);
+  say(phaseText(phase).line);
   glitch();
   renderStatic();
   paintTime();
@@ -847,15 +1277,13 @@ function selectPhase(phase) {
 
 function interfere(kind) {
   if (!(state.running && state.phase === "focus")) {
-    say("Las interferencias solo se marcan en infiltración en curso.");
+    say(t("say.inter.only"));
     return;
   }
   state.sessionInterrupts[kind] += 1;
   save();
   renderStatic();
-  say(kind === "internal"
-    ? "Interferencia interna. Mantén el objetivo."
-    : "Interferencia externa. No cambies de canal.");
+  say(kind === "internal" ? t("say.inter.internal") : t("say.inter.external"));
   playHit();
 }
 
@@ -884,7 +1312,7 @@ function addMission(title, notes) {
   if (pinned) state.activeMissionId = mission.id;
   if (ui.filter === "done" || ui.filter === "log") ui.filter = "open";
   save();
-  say(pinned ? `Blanco fijado: ${mission.title}` : "Actividad en cola.");
+  say(pinned ? t("say.pinned", { title: mission.title }) : t("say.queued"));
   renderStatic();
   renderLists();
 }
@@ -909,7 +1337,7 @@ function deleteMission(id) {
   state.missions = state.missions.filter((m) => m.id !== id);
   if (state.activeMissionId === id) state.activeMissionId = null;
   save();
-  say("Actividad retirada del registro.");
+  say(t("say.deleted"));
   renderStatic();
   renderLists();
 }
@@ -920,7 +1348,7 @@ function toggleDone(id) {
   mission.status = mission.status === "done" ? "open" : "done";
   if (mission.status === "done" && state.activeMissionId === id) state.activeMissionId = null;
   save();
-  say(mission.status === "done" ? "Actividad marcada como lista." : "Actividad reabierta.");
+  say(mission.status === "done" ? t("say.done") : t("say.reopened"));
   renderStatic();
   renderLists();
 }
@@ -950,14 +1378,14 @@ function saveEdit(id) {
   const title = row.querySelector(".edit-title")?.value.trim() || "";
   const notes = row.querySelector(".edit-note")?.value.trim() || "";
   if (!title) {
-    say("Identifica la actividad.");
+    say(t("say.needTitle"));
     return;
   }
   mission.title = title.slice(0, 80);
   mission.notes = notes.slice(0, 140);
   ui.editing = null;
   save();
-  say("Actividad actualizada.");
+  say(t("say.updated"));
   renderStatic();
   renderLists();
 }
@@ -966,12 +1394,12 @@ function setActive(id) {
   const mission = byId(id);
   if (!mission) return;
   if (mission.status === "done") {
-    say("Reabre la actividad si quieres fijarla como blanco.");
+    say(t("say.reopenFirst"));
     return;
   }
   state.activeMissionId = id;
   save();
-  say(`Blanco fijado: ${mission.title}`);
+  say(t("say.pinned", { title: mission.title }));
   renderStatic();
   renderLists();
 }
@@ -983,7 +1411,7 @@ function unlock(id) {
   }
   state.activeMissionId = null;
   save();
-  say("Blanco liberado.");
+  say(t("say.unlocked"));
   renderStatic();
   renderLists();
 }
@@ -1012,9 +1440,9 @@ function missionNode(mission) {
   mark.textContent = mission.id === state.activeMissionId ? "►" : "□";
   if (mission.status === "done") {
     mark.disabled = true;
-    mark.setAttribute("aria-label", "Actividad lista");
+    mark.setAttribute("aria-label", t("aria.done"));
   } else {
-    mark.setAttribute("aria-label", mission.id === state.activeMissionId ? "Liberar blanco" : "Fijar blanco");
+    mark.setAttribute("aria-label", mission.id === state.activeMissionId ? t("aria.lock") : t("aria.unlock"));
   }
 
   const body = document.createElement("div");
@@ -1028,7 +1456,7 @@ function missionNode(mission) {
     note.className = "edit-note";
     note.maxLength = 140;
     note.value = mission.notes;
-    note.placeholder = "Nota de campo";
+    note.placeholder = t("ph.field");
     body.append(title, note);
   } else {
     const title = document.createElement("div");
@@ -1040,9 +1468,9 @@ function missionNode(mission) {
   const meta = document.createElement("div");
   meta.className = "meta";
   const label = document.createElement("span");
-  label.textContent = `${mission.donePoms}/${mission.estimate} · ${PRIO[mission.priority]}`;
+  label.textContent = `${mission.donePoms}/${mission.estimate} · ${t(`prio.${mission.priority}`)}`;
   if (mission.addedSeconds) label.textContent += ` · +${fmtSpan(mission.addedSeconds)}`;
-  if (mission.status === "done") label.textContent += " · CLEAR";
+  if (mission.status === "done") label.textContent += t("clear.mark");
   const pips = document.createElement("span");
   pips.className = "pips";
   pipNodes(mission.donePoms, mission.estimate, pips);
@@ -1070,8 +1498,8 @@ function missionNode(mission) {
   actions.className = "actions";
   const armed = ui.armKey === `del:${mission.id}`;
   const buttons = ui.editing === mission.id
-    ? [["save", "OK"], ["cancel", "NO"]]
-    : [["up", "▲"], ["down", "▼"], ["edit", "EDT"], ["mins", "MIN"], ["done", mission.status === "done" ? "REA" : "CLR"], ["delete", armed ? "SI" : "DEL"]];
+    ? [["save", t("act.ok")], ["cancel", t("act.no")]]
+    : [["up", "▲"], ["down", "▼"], ["edit", t("act.edit")], ["mins", t("act.min")], ["done", mission.status === "done" ? t("act.reopen") : t("act.clear")], ["delete", armed ? t("act.yes") : t("act.del")]];
   buttons.forEach(([act, text]) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -1087,9 +1515,9 @@ function missionNode(mission) {
 function dayLabel(ts) {
   const key = keyFromDate(new Date(ts));
   const today = todayKey();
-  if (key === today) return "HOY";
-  if (key === shiftKey(today, -1)) return "AYER";
-  return new Date(ts).toLocaleDateString("es", { day: "2-digit", month: "short" }).toUpperCase();
+  if (key === today) return t("today");
+  if (key === shiftKey(today, -1)) return t("yesterday");
+  return new Date(ts).toLocaleDateString(localeTag(), { day: "2-digit", month: "short" }).toUpperCase();
 }
 
 function renderMissions() {
@@ -1099,9 +1527,7 @@ function renderMissions() {
   if (!items.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = ui.filter === "done"
-      ? "Ninguna actividad lista."
-      : "Sin objetivos en el canal. Registra una actividad.";
+    empty.textContent = ui.filter === "done" ? t("empty.done") : t("empty.open");
     list.append(empty);
     return;
   }
@@ -1121,7 +1547,7 @@ function renderLog() {
   if (!items.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = "Sin registros en el canal.";
+    empty.textContent = t("empty.log");
     list.append(empty);
     return;
   }
@@ -1139,9 +1565,14 @@ function renderLog() {
     li.className = "log";
     li.dataset.phase = entry.phase;
     const time = document.createElement("time");
-    time.textContent = new Date(entry.at).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+    time.textContent = new Date(entry.at).toLocaleTimeString(localeTag(), { hour: "2-digit", minute: "2-digit" });
     const name = document.createElement("b");
-    const labels = { focus: "INFILTRACIÓN", short: "PAUSA TÁCTICA", long: "EXTRACCIÓN", extra: "TIEMPO AÑADIDO" };
+    const labels = {
+      focus: t("phase.focus.label"),
+      short: t("phase.short.label"),
+      long: t("phase.long.label"),
+      extra: t("phase.extra.label"),
+    };
     name.textContent = labels[entry.phase] || entry.phase;
     const dur = document.createElement("small");
     const marks = [];
@@ -1150,7 +1581,7 @@ function renderLog() {
     if (entry.external) marks.push(`EXT ${entry.external}`);
     dur.textContent = marks.length ? `${fmt(entry.seconds)} · ${marks.join(" ")}` : fmt(entry.seconds);
     const title = document.createElement("em");
-    title.textContent = entry.title;
+    title.textContent = displayTitle(entry.title);
     li.append(time, name, dur, title);
     list.append(li);
   });
@@ -1160,10 +1591,10 @@ function renderTabs() {
   const open = state.missions.filter((m) => m.status !== "done").length;
   const done = state.missions.length - open;
   const tabs = [
-    ["open", `ABIERTAS ${open}`],
-    ["done", `LISTAS ${done}`],
-    ["log", "REGISTRO"],
-    ["metrics", "MES"],
+    ["open", t("tab.open", { n: open })],
+    ["done", t("tab.done", { n: done })],
+    ["log", t("tab.log")],
+    ["metrics", t("tab.month")],
   ];
   tabs.forEach(([id, text]) => {
     const button = $(`#tab-${id}`);
@@ -1182,7 +1613,7 @@ function renderTabs() {
 }
 
 function syncPurge() {
-  $("#purge").textContent = ui.armKey === "purge" ? "CONFIRMAR" : "PURGAR";
+  $("#purge").textContent = ui.armKey === "purge" ? t("purge.confirm") : t("purge");
 }
 
 function renderHeat(list) {
@@ -1206,8 +1637,8 @@ function renderHeat(list) {
   item.className = "heat";
   const total = document.createElement("p");
   total.className = "heat-total";
-  const fromLabel = span.start.toLocaleDateString("es", { month: "short", year: "numeric" }).replace(".", "");
-  const toLabel = span.end.toLocaleDateString("es", { month: "short", year: "numeric" }).replace(".", "");
+  const fromLabel = span.start.toLocaleDateString(localeTag(), { month: "short", year: "numeric" }).replace(".", "");
+  const toLabel = span.end.toLocaleDateString(localeTag(), { month: "short", year: "numeric" }).replace(".", "");
   total.textContent = `${fmtLong(spanSeconds)} · ${fromLabel} – ${toLabel}`;
 
   const board = document.createElement("div");
@@ -1215,7 +1646,7 @@ function renderHeat(list) {
   const dows = document.createElement("div");
   dows.className = "heat-dows";
   dows.setAttribute("aria-hidden", "true");
-  ["L", "M", "X", "J", "V", "S", "D"].forEach((name, index) => {
+  LISTS[lang].dows.forEach((name, index) => {
     const mark = document.createElement("span");
     mark.textContent = index % 2 === 0 && index < 6 ? name : "";
     dows.append(mark);
@@ -1225,7 +1656,7 @@ function renderHeat(list) {
   scroller.className = "heat-scroll";
   const months = document.createElement("div");
   months.className = "heat-months";
-  const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+  const monthNames = LISTS[lang].months;
   let lastColumn = -4;
   weeks.forEach((week, index) => {
     const first = week.find((day) => day.getDate() === 1) || (index === 0 ? week[0] : null);
@@ -1241,7 +1672,7 @@ function renderHeat(list) {
   const grid = document.createElement("div");
   grid.className = "heat-grid";
   grid.setAttribute("role", "grid");
-  grid.setAttribute("aria-label", "Historial de tiempo por día");
+  grid.setAttribute("aria-label", t("heat.aria"));
   let focusDay = ui.day;
   weeks.forEach((week) => {
     week.forEach((date) => {
@@ -1269,7 +1700,7 @@ function renderHeat(list) {
   const legend = document.createElement("p");
   legend.className = "heat-legend";
   const less = document.createElement("span");
-  less.textContent = "MENOS";
+  less.textContent = t("heat.less");
   legend.append(less);
   for (let level = 0; level <= 4; level += 1) {
     const swatch = document.createElement("i");
@@ -1277,7 +1708,7 @@ function renderHeat(list) {
     legend.append(swatch);
   }
   const more = document.createElement("span");
-  more.textContent = "MÁS";
+  more.textContent = t("heat.more");
   legend.append(more);
   item.append(total, board, legend);
   list.append(item);
@@ -1294,7 +1725,7 @@ function renderMetrics() {
   const month = ui.month || currentMonthKey();
   if (label) {
     label.textContent = ui.day
-      ? parseDay(ui.day).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }).toUpperCase()
+      ? parseDay(ui.day).toLocaleDateString(localeTag(), { day: "numeric", month: "long", year: "numeric" }).toUpperCase()
       : monthLabel(month);
   }
   if (next) next.disabled = month >= currentMonthKey();
@@ -1303,14 +1734,14 @@ function renderMetrics() {
   if (ui.metricsLoading && !ui.metrics) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = "Leyendo el mes…";
+    empty.textContent = t("metric.loading");
     list.append(empty);
     return;
   }
   if (ui.metricsError || !ui.metrics) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = "Sin enlace con las métricas.";
+    empty.textContent = t("metric.error");
     list.append(empty);
     return;
   }
@@ -1319,10 +1750,10 @@ function renderMetrics() {
   const summary = document.createElement("li");
   summary.className = "metric-summary";
   [
-    ["TIEMPO", fmtLong(totals.seconds)],
-    ["AÑADIDO", fmtLong(totals.addedSeconds)],
-    ["BLOQUES", String(totals.blocks)],
-    ["ACTIVIDADES", String(totals.activities)],
+    [t("metric.time"), fmtLong(totals.seconds)],
+    [t("metric.added"), fmtLong(totals.addedSeconds)],
+    [t("metric.blocks"), String(totals.blocks)],
+    [t("metric.activities"), String(totals.activities)],
   ].forEach(([name, value]) => {
     const cell = document.createElement("div");
     const k = document.createElement("span");
@@ -1336,7 +1767,7 @@ function renderMetrics() {
   if (!ui.metrics.activities.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = ui.day ? "Sin tiempo registrado este día." : "Sin tiempo registrado en este mes.";
+    empty.textContent = ui.day ? t("metric.emptyDay") : t("metric.emptyMonth");
     list.append(empty);
     return;
   }
@@ -1345,11 +1776,11 @@ function renderMetrics() {
     const li = document.createElement("li");
     li.className = "metric";
     const title = document.createElement("strong");
-    title.textContent = item.title;
+    title.textContent = displayTitle(item.title);
     const meta = document.createElement("span");
     const bits = [blockLabel(item.blocks), fmtLong(item.seconds)];
-    if (item.estimate) bits.push(`estimado ${item.estimate}`);
-    if (item.addedSeconds > 0) bits.push(`incluye +${fmtLong(item.addedSeconds)}`);
+    if (item.estimate) bits.push(t("metric.estimate", { n: item.estimate }));
+    if (item.addedSeconds > 0) bits.push(t("metric.includes", { time: fmtLong(item.addedSeconds) }));
     meta.textContent = bits.join(" · ");
     const bar = document.createElement("i");
     bar.style.width = `${Math.max(4, Math.round((item.seconds / max) * 100))}%`;
@@ -1398,13 +1829,13 @@ function paintRun() {
   const tag = $("#alert-tag");
   if (alert === "alert") {
     tag.hidden = false;
-    tag.textContent = "! ALERT !";
+    tag.textContent = t("alert.tag");
   } else if (alert === "caution") {
     tag.hidden = false;
-    tag.textContent = "CAUTION";
+    tag.textContent = t("alert.caution");
   } else tag.hidden = true;
 
-  $("#status").textContent = run === "live" ? "EN CURSO" : run === "hold" ? "EN ESPERA" : "LISTO";
+  $("#status").textContent = run === "live" ? t("status.live") : run === "hold" ? t("status.hold") : t("status.ready");
   $("#rec").classList.toggle("on", state.running);
   $("#sig").className = "sig" + (run === "live" ? " live" : run === "hold" ? " hold" : "");
 }
@@ -1416,39 +1847,40 @@ function paintTime() {
   const ring = $("#ring");
   ring.style.strokeDasharray = `${RING_C}`;
   ring.style.strokeDashoffset = `${RING_C * ratio}`;
-  const label = PHASE[state.phase].label;
+  const label = phaseText(state.phase).label;
   document.title = `${fmt(state.remaining)} ${label}`;
-  $("#timer").setAttribute("aria-label", `${label}, ${fmt(state.remaining)} restantes`);
+  $("#timer").setAttribute("aria-label", t("timer.remaining", { label, time: fmt(state.remaining) }));
 }
 
 function paintClock() {
-  $("#clock").textContent = new Date().toLocaleTimeString("es-ES", { hour12: false });
+  $("#clock").textContent = new Date().toLocaleTimeString(localeTag(), { hour12: false });
 }
 
 function renderStatic() {
   $("#callsign").textContent = state.settings.callsign;
   if (!ui.glitching) $("#freq").textContent = PHASE[state.phase].freq;
-  $("#phase-label").textContent = PHASE[state.phase].label;
+  $("#phase-label").textContent = phaseText(state.phase).label;
 
   const mission = byId(state.activeMissionId);
   const target = $("#target");
   if (mission) {
-    target.textContent = `BLANCO: ${mission.title}`;
+    target.textContent = t("target", { title: mission.title });
     target.dataset.priority = mission.priority;
   } else {
-    target.textContent = "BLANCO: —";
+    target.textContent = t("target.none");
     target.dataset.priority = "";
   }
 
   ["focus", "short", "long"].forEach((phase) => {
     const button = $(`#ph-${phase}`);
     button.classList.toggle("is-on", phase === state.phase);
+    button.querySelector(".nm").textContent = phaseText(phase).label;
     button.querySelector(".du").textContent = fmt(phaseSeconds(phase));
     button.setAttribute("aria-pressed", phase === state.phase ? "true" : "false");
   });
 
   const toggle = $("#toggle");
-  toggle.textContent = state.running ? "PAUSA" : "INICIAR";
+  toggle.textContent = state.running ? t("pause") : t("start");
   toggle.classList.toggle("live", state.running);
 
   const sound = $("#toggle-sound");
@@ -1475,7 +1907,7 @@ function renderStatic() {
   const added = $("#added-note");
   if (added) {
     added.hidden = !(state.blockExtra > 0);
-    added.textContent = state.blockExtra > 0 ? `+${fmtSpan(state.blockExtra)} EN ESTE BLOQUE` : "";
+    added.textContent = state.blockExtra > 0 ? t("block.extra", { time: fmtSpan(state.blockExtra) }) : "";
   }
 
   const goal = Math.max(1, state.settings.dailyGoal);
@@ -1527,10 +1959,10 @@ function openSettings() {
   form.querySelector("#set-notify").checked = state.settings.notify;
   form.querySelector("#set-close").checked = state.settings.autoClose;
   form.querySelector("#set-strict").checked = state.settings.strict;
-  if (!("Notification" in window)) $("#perm-note").textContent = "Este navegador no muestra avisos de escritorio.";
-  else if (Notification.permission === "denied") $("#perm-note").textContent = "Los avisos están bloqueados en el navegador.";
-  else if (Notification.permission === "granted") $("#perm-note").textContent = "Avisos de escritorio autorizados.";
-  else $("#perm-note").textContent = "Al activar los avisos, el navegador pedirá permiso.";
+  if (!("Notification" in window)) $("#perm-note").textContent = t("perm.none");
+  else if (Notification.permission === "denied") $("#perm-note").textContent = t("perm.denied");
+  else if (Notification.permission === "granted") $("#perm-note").textContent = t("perm.granted");
+  else $("#perm-note").textContent = t("perm.ask");
   $("#settings").hidden = false;
   form.querySelector("#set-callsign").focus();
 }
@@ -1565,14 +1997,14 @@ function applySettings(event) {
   }
   save();
   closeSettings();
-  say(state.running ? "Parámetros grabados. El reloj en curso no cambia." : "Parámetros grabados.");
+  say(state.running ? t("say.saved.running") : t("say.saved"));
   renderStatic();
   paintTime();
   if (next.notify && "Notification" in window && Notification.permission === "default") {
     Notification.requestPermission().then(() => {
       $("#perm-note").textContent = Notification.permission === "granted"
-        ? "Avisos de escritorio autorizados."
-        : "Aviso no autorizado.";
+        ? t("perm.granted")
+        : t("perm.denied2");
     });
   }
 }
@@ -1603,6 +2035,10 @@ function armReady() {
 
 function bind() {
   $("#boot").addEventListener("click", armReady);
+
+  document.querySelectorAll("[data-lang]").forEach((button) => {
+    button.addEventListener("click", () => setLang(button.dataset.lang));
+  });
 
   $("#toggle").addEventListener("click", toggle);
   $("#abort").addEventListener("click", abortTimer);
@@ -1646,7 +2082,7 @@ function bind() {
     const title = $("#task-title").value.trim();
     const notes = $("#task-note").value.trim();
     if (!title) {
-      say("Identifica la actividad.");
+      say(t("say.needTitle"));
       shake($("#composer"));
       $("#task-title").focus();
       return;
@@ -1816,17 +2252,19 @@ async function main() {
   if (state.running && state.endsAt && !expiredOnLoad) {
     state.remaining = Math.max(0, Math.round((state.endsAt - Date.now()) / 1000));
   }
+  stateReady = true;
   bind();
   renderStatic();
   renderLists();
   paintTime();
   paintClock();
   $("#codec").textContent = dbOnline
-    ? PHASE[state.phase].line
-    : "Sin enlace con la base de datos.";
+    ? phaseText(state.phase).line
+    : t("db.offline");
   setInterval(tick, 250);
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   setTimeout(armReady, reduce ? 250 : 1450);
 }
 
+applyChrome();
 main();

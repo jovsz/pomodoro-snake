@@ -277,6 +277,22 @@ body[data-alert="alert"] .monitor {
   border-color: var(--phosphor);
 }
 
+.lang {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+
+.lang button {
+  border: 0;
+  padding: 0.4rem 0.42rem;
+  font-size: 0.75rem;
+}
+
+.lang button.is-on {
+  background: var(--phosphor);
+  color: #081107;
+}
+
 .goalbar { height: 3px; background: rgba(198, 255, 74, 0.12); }
 .goalbar span {
   display: block;

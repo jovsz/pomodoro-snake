@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,12 +17,12 @@
       <p class="eyebrow">CODEC TYPE-7</p>
       <p class="boot-freq">140.85</p>
       <ul>
-        <li>ESTABLECIENDO ENLACE</li>
-        <li>CIFRADO DEL CANAL · OK</li>
-        <li>RADAR TÁCTICO · OK</li>
-        <li>REGISTRO DE MISIÓN · OK</li>
+        <li data-i18n="boot.1">ESTABLISHING LINK</li>
+        <li data-i18n="boot.2">CHANNEL CIPHER · OK</li>
+        <li data-i18n="boot.3">TACTICAL RADAR · OK</li>
+        <li data-i18n="boot.4">MISSION LOG · OK</li>
       </ul>
-      <p class="dim blink">PULSA PARA ENTRAR</p>
+      <p class="dim blink" data-i18n="boot.enter">PRESS TO ENTER</p>
     </div>
   </div>
 
@@ -41,27 +41,31 @@
       <div class="screen" id="screen">
         <header class="top">
           <div class="ident">
-            <span class="eyebrow">INDICATIVO</span>
+            <span class="eyebrow" data-i18n="eyebrow.callsign">CALL SIGN</span>
             <strong id="callsign">SNAKE</strong>
           </div>
           <div class="freq-readout">
-            <span class="eyebrow">FRECUENCIA</span>
+            <span class="eyebrow" data-i18n="eyebrow.freq">FREQUENCY</span>
             <strong id="freq">140.85</strong>
           </div>
           <div class="top-right">
-            <span id="status">LISTO</span>
+            <span id="status">READY</span>
             <time id="clock">00:00:00</time>
             <span class="rec" id="rec"><i></i>REC</span>
-            <button type="button" id="toggle-sound" aria-label="Sonido del codec" aria-pressed="true">VOZ</button>
-            <button type="button" id="open-settings" aria-label="Ajustes">SYS</button>
+            <div class="lang" role="group" data-i18n-aria="lang.aria" aria-label="Language">
+              <button type="button" id="lang-en" data-lang="en" aria-pressed="true">EN</button>
+              <button type="button" id="lang-es" data-lang="es" aria-pressed="false">ES</button>
+            </div>
+            <button type="button" id="toggle-sound" data-i18n="voice" data-i18n-aria="aria.sound" aria-label="Codec sound" aria-pressed="true">VOICE</button>
+            <button type="button" id="open-settings" aria-label="Settings" data-i18n-aria="aria.settings">SYS</button>
           </div>
         </header>
-        <div class="goalbar" title="Meta diaria"><span id="goal-fill"></span></div>
+        <div class="goalbar" data-i18n-title="goal.title" title="Daily goal"><span id="goal-fill"></span></div>
 
         <div class="layout">
-          <section class="col-left frame" aria-label="Temporizador">
-            <p class="eyebrow center">RADAR TÁCTICO</p>
-            <div class="radar" id="timer" role="timer" aria-label="Temporizador pomodoro">
+          <section class="col-left frame" data-i18n-aria="aria.timerSection" aria-label="Timer">
+            <p class="eyebrow center" data-i18n="radar">TACTICAL RADAR</p>
+            <div class="radar" id="timer" role="timer" data-i18n-aria="aria.timer" aria-label="Pomodoro timer">
               <svg class="progress" viewBox="0 0 200 200" aria-hidden="true">
                 <circle class="track" cx="100" cy="100" r="92"></circle>
                 <circle class="value" id="ring" cx="100" cy="100" r="92" transform="rotate(-90 100 100)"></circle>
@@ -75,34 +79,34 @@
               </div>
               <p class="time" id="time">25:00</p>
             </div>
-            <p class="phase" id="phase-label">INFILTRACIÓN</p>
+            <p class="phase" id="phase-label">INFILTRATION</p>
             <p class="alert-tag" id="alert-tag" hidden>! ALERT !</p>
-            <p class="target" id="target">BLANCO: —</p>
-            <p class="codec" id="codec" aria-live="polite">Canal listo. Elige un blanco y entra.</p>
+            <p class="target" id="target">TARGET: —</p>
+            <p class="codec" id="codec" aria-live="polite">Channel open. Pick a target and move in.</p>
             <div class="wave" id="wave" aria-hidden="true">
               <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
             </div>
 
             <div class="controls">
-              <button type="button" class="primary" id="toggle">INICIAR</button>
-              <button type="button" id="abort">ABORTAR</button>
-              <button type="button" id="skip">SALTAR</button>
+              <button type="button" class="primary" id="toggle">START</button>
+              <button type="button" id="abort" data-i18n="abort">ABORT</button>
+              <button type="button" id="skip" data-i18n="skip">SKIP</button>
             </div>
 
-            <div class="freqs" role="tablist" aria-label="Fase">
+            <div class="freqs" role="tablist" data-i18n-aria="aria.phase" aria-label="Phase">
               <button type="button" class="freq-btn is-on" id="ph-focus" data-phase="focus">
                 <span class="fq">140.85</span>
-                <span class="nm">INFILTRACIÓN</span>
+                <span class="nm">INFILTRATION</span>
                 <span class="du">25:00</span>
               </button>
               <button type="button" class="freq-btn" id="ph-short" data-phase="short">
                 <span class="fq">141.12</span>
-                <span class="nm">PAUSA TÁCTICA</span>
+                <span class="nm">TACTICAL PAUSE</span>
                 <span class="du">05:00</span>
               </button>
               <button type="button" class="freq-btn" id="ph-long" data-phase="long">
                 <span class="fq">141.80</span>
-                <span class="nm">EXTRACCIÓN</span>
+                <span class="nm">EXTRACTION</span>
                 <span class="du">15:00</span>
               </button>
             </div>
@@ -110,11 +114,11 @@
             <div class="inter">
               <span id="int-count">INT 00</span>
               <span id="ext-count">EXT 00</span>
-              <button type="button" id="btn-int" disabled>INTERNA</button>
-              <button type="button" id="btn-ext" disabled>EXTERNA</button>
+              <button type="button" id="btn-int" data-i18n="int" disabled>INTERNAL</button>
+              <button type="button" id="btn-ext" data-i18n="ext" disabled>EXTERNAL</button>
             </div>
             <div class="extend">
-              <span>ALARGAR</span>
+              <span data-i18n="extend">EXTEND</span>
               <button type="button" data-extend="5">+5</button>
               <button type="button" data-extend="10">+10</button>
               <button type="button" data-extend="15">+15</button>
@@ -122,49 +126,49 @@
             <p class="added-note" id="added-note" hidden></p>
           </section>
 
-          <section class="col-right frame" id="panel" data-view="missions" aria-label="Actividades">
+          <section class="col-right frame" id="panel" data-view="missions" data-i18n-aria="aria.activities" aria-label="Activities">
             <header class="panel-h">
-              <h2>ACTIVIDADES</h2>
-              <nav class="tabs" aria-label="Vistas">
-                <button type="button" id="tab-open" class="is-on" aria-pressed="true">ABIERTAS</button>
-                <button type="button" id="tab-done" aria-pressed="false">LISTAS</button>
-                <button type="button" id="tab-log" aria-pressed="false">REGISTRO</button>
-                <button type="button" id="tab-metrics" aria-pressed="false">MES</button>
+              <h2 data-i18n="activities">ACTIVITIES</h2>
+              <nav class="tabs" data-i18n-aria="aria.views" aria-label="Views">
+                <button type="button" id="tab-open" class="is-on" aria-pressed="true">OPEN</button>
+                <button type="button" id="tab-done" aria-pressed="false">DONE</button>
+                <button type="button" id="tab-log" aria-pressed="false">LOG</button>
+                <button type="button" id="tab-metrics" aria-pressed="false">MONTH</button>
               </nav>
-              <button type="button" id="purge">PURGAR</button>
+              <button type="button" id="purge">PURGE</button>
             </header>
 
             <div id="metrics-head" class="metrics-head" hidden>
-              <button type="button" id="month-prev" aria-label="Mes anterior">◀</button>
-              <strong id="month-label">MES</strong>
-              <button type="button" id="month-next" aria-label="Mes siguiente">▶</button>
+              <button type="button" id="month-prev" data-i18n-aria="aria.monthPrev" aria-label="Previous month">◀</button>
+              <strong id="month-label">MONTH</strong>
+              <button type="button" id="month-next" data-i18n-aria="aria.monthNext" aria-label="Next month">▶</button>
             </div>
 
             <form id="composer" class="composer" autocomplete="off">
               <label class="grow">
-                <span class="eyebrow">ACTIVIDAD</span>
-                <input id="task-title" maxlength="80" placeholder="Qué vas a ejecutar…" required>
+                <span class="eyebrow" data-i18n="activity">ACTIVITY</span>
+                <input id="task-title" maxlength="80" data-i18n-placeholder="ph.activity" placeholder="What you are about to run…" required>
               </label>
               <label class="grow">
-                <span class="eyebrow">NOTA DE CAMPO</span>
-                <input id="task-note" maxlength="140" placeholder="Opcional">
+                <span class="eyebrow" data-i18n="note">FIELD NOTE</span>
+                <input id="task-note" maxlength="140" data-i18n-placeholder="ph.note" placeholder="Optional">
               </label>
               <div class="composer-row">
                 <div class="est">
-                  <span class="eyebrow">POMODOROS</span>
+                  <span class="eyebrow" data-i18n="pomodoros">POMODOROS</span>
                   <div class="stepper">
-                    <button type="button" id="est-dec" aria-label="Menos pomodoros">−</button>
+                    <button type="button" id="est-dec" data-i18n-aria="aria.less" aria-label="Fewer pomodoros">−</button>
                     <b id="est-val">1</b>
-                    <button type="button" id="est-inc" aria-label="Más pomodoros">+</button>
+                    <button type="button" id="est-inc" data-i18n-aria="aria.more" aria-label="More pomodoros">+</button>
                   </div>
                 </div>
-                <div class="prios" role="group" aria-label="Prioridad">
-                  <button type="button" data-prio="routine" class="is-on" aria-pressed="true">RUTINA</button>
-                  <button type="button" data-prio="priority" aria-pressed="false">PRIORIDAD</button>
-                  <button type="button" data-prio="urgent" aria-pressed="false">URGENTE</button>
+                <div class="prios" role="group" data-i18n-aria="aria.priority" aria-label="Priority">
+                  <button type="button" data-prio="routine" class="is-on" aria-pressed="true" data-i18n="prio.routine">ROUTINE</button>
+                  <button type="button" data-prio="priority" aria-pressed="false" data-i18n="prio.priority">PRIORITY</button>
+                  <button type="button" data-prio="urgent" aria-pressed="false" data-i18n="prio.urgent">URGENT</button>
                 </div>
               </div>
-              <button type="submit" class="primary">REGISTRAR</button>
+              <button type="submit" class="primary" data-i18n="register">REGISTER</button>
             </form>
 
             <ul class="list" id="list"></ul>
@@ -172,17 +176,17 @@
         </div>
 
         <footer class="status">
-          <div class="stat"><span>CICLO</span><div class="cycle" id="cycle"></div></div>
-          <div class="stat"><span>HOY</span><strong id="stat-today">0/8</strong></div>
-          <div class="stat"><span>FOCO</span><strong id="stat-focus">0m</strong></div>
-          <div class="stat"><span>RACHA</span><strong id="stat-streak">0</strong></div>
-          <div class="stat"><span>SERVICIO</span><strong id="stat-life">0</strong></div>
-          <p class="keys">ESPACIO INICIAR · R ABORTAR · S SALTAR · I/E INTERFERENCIA · N ACTIVIDAD · 1 2 3 FASE</p>
+          <div class="stat"><span data-i18n="stat.cycle">CYCLE</span><div class="cycle" id="cycle"></div></div>
+          <div class="stat"><span data-i18n="stat.today">TODAY</span><strong id="stat-today">0/8</strong></div>
+          <div class="stat"><span data-i18n="stat.focus">FOCUS</span><strong id="stat-focus">0m</strong></div>
+          <div class="stat"><span data-i18n="stat.streak">STREAK</span><strong id="stat-streak">0</strong></div>
+          <div class="stat"><span data-i18n="stat.service">SERVICE</span><strong id="stat-life">0</strong></div>
+          <p class="keys" data-i18n="keys">SPACE START · R ABORT · S SKIP · I/E INTERFERENCE · N ACTIVITY · 1 2 3 PHASE</p>
         </footer>
 
         <div class="banner" id="banner" aria-hidden="true">
           <div>
-            <img id="banner-gif" class="banner-gif" alt="Saludo al cerrar la infiltración" hidden>
+            <img id="banner-gif" class="banner-gif" alt="Salute when the infiltration closes" hidden>
             <strong id="banner-title">FASE CLEAR</strong>
             <p id="banner-sub"></p>
           </div>
@@ -190,7 +194,7 @@
       </div>
 
       <div class="bezel bottom">
-        <span>BASE DE DATOS</span>
+        <span data-i18n="bezel.db">DATABASE</span>
         <span class="sig" id="sig" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
         <span>140–142 MHz</span>
       </div>
@@ -198,36 +202,36 @@
       <div class="modal" id="settings" hidden>
         <form class="sheet frame" id="settings-form" autocomplete="off">
           <header>
-            <h2>SISTEMA</h2>
-            <p class="dim">PARÁMETROS DEL ENLACE</p>
+            <h2 data-i18n="settings.title">SYSTEM</h2>
+            <p class="dim" data-i18n="settings.sub">LINK PARAMETERS</p>
           </header>
-          <label class="field wide">Indicativo
+          <label class="field wide"><span data-i18n="set.callsign">Call sign</span>
             <input id="set-callsign" maxlength="12" spellcheck="false">
           </label>
-          <label class="field">Infiltración (min)
+          <label class="field"><span data-i18n="set.focus">Infiltration (min)</span>
             <input id="set-focus" type="number" min="1" max="180" step="1">
           </label>
-          <label class="field">Pausa táctica (min)
+          <label class="field"><span data-i18n="set.short">Tactical pause (min)</span>
             <input id="set-short" type="number" min="1" max="60" step="1">
           </label>
-          <label class="field">Extracción (min)
+          <label class="field"><span data-i18n="set.long">Extraction (min)</span>
             <input id="set-long" type="number" min="1" max="90" step="1">
           </label>
-          <label class="field">Pomodoros por ciclo
+          <label class="field"><span data-i18n="set.cycle">Pomodoros per cycle</span>
             <input id="set-cycle" type="number" min="2" max="8" step="1">
           </label>
-          <label class="field">Meta diaria
+          <label class="field"><span data-i18n="set.goal">Daily goal</span>
             <input id="set-goal" type="number" min="1" max="20" step="1">
           </label>
-          <label class="check"><input type="checkbox" id="set-auto"> Encadenar la fase siguiente</label>
-          <label class="check"><input type="checkbox" id="set-sound"> Sonido del codec</label>
-          <label class="check"><input type="checkbox" id="set-notify"> Aviso de escritorio</label>
-          <label class="check"><input type="checkbox" id="set-close"> Cerrar actividad al cumplir la estimación</label>
-          <label class="check"><input type="checkbox" id="set-strict"> Exigir blanco antes de infiltrar</label>
+          <label class="check"><input type="checkbox" id="set-auto"> <span data-i18n="set.auto">Chain the next phase</span></label>
+          <label class="check"><input type="checkbox" id="set-sound"> <span data-i18n="set.sound">Codec sound</span></label>
+          <label class="check"><input type="checkbox" id="set-notify"> <span data-i18n="set.notify">Desktop alert</span></label>
+          <label class="check"><input type="checkbox" id="set-close"> <span data-i18n="set.close">Close the activity when the estimate is met</span></label>
+          <label class="check"><input type="checkbox" id="set-strict"> <span data-i18n="set.strict">Require a target before infiltrating</span></label>
           <p id="perm-note" class="dim"></p>
           <div class="sheet-actions">
-            <button type="button" id="close-settings">CERRAR</button>
-            <button type="submit" class="primary">GRABAR</button>
+            <button type="button" id="close-settings" data-i18n="close">CLOSE</button>
+            <button type="submit" class="primary" data-i18n="save">SAVE</button>
           </div>
         </form>
       </div>
@@ -236,7 +240,7 @@
 
   <div class="scanlines" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
-  <noscript>Activa JavaScript para usar el enlace CODEC.</noscript>
+  <noscript data-i18n="noscript">Enable JavaScript to use the CODEC link.</noscript>
   <script src="app.js"></script>
 </body>
 </html>
