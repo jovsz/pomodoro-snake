@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: codec
+      POSTGRES_PASSWORD: codec
+      POSTGRES_DB: pomodoro
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codec -d pomodoro"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    ports:
+      - "8757:8757"
+    environment:
+      DATABASE_URL: postgres://codec:codec@db:5432/pomodoro
+      PORT: "8757"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
