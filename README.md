@@ -28,7 +28,7 @@ Postgres is not published on the host. The app reaches it with `postgres://codec
 
 Press **START** to start the selected phase. **PAUSE** holds it, **ABORT** throws the block away, and **SKIP** moves on without recording it. A long break arrives after four completed infiltrations. Change that count in settings.
 
-When you start a phase from its full duration, a short animation plays in the center and then leaves. It does not stay under the clock. Resuming a paused phase does not play it again. When an infiltration reaches zero, a salute marks **PHASE CLEAR** and the block is stored. Spanish uses the same controls under INFILTRACIÓN, PAUSA TÁCTICA, and EXTRACCIÓN.
+When you start a phase from its full duration, a short animation plays in the center and then leaves. It does not stay under the clock. Resuming a paused phase does not play it again. When an infiltration reaches zero, a salute asks whether the task is finished. **DONE** closes it, **NOT YET** stores the block and leaves it open, and **EXTEND** adds 5, 10, or 15 minutes to the same block. Spanish uses the same controls under INFILTRACIÓN, PAUSA TÁCTICA, and EXTRACCIÓN.
 
 ## Activities
 

@@ -888,7 +888,10 @@ input:focus { border-color: var(--phosphor); }
   max-height: 100%;
   overflow: auto;
 }
-.sheet header, .sheet .check, #perm-note, .sheet-actions { grid-column: 1 / -1; }
+.sheet header, .sheet .check, #perm-note, .sheet-actions, .finish-task, .finish-extend, #finish-gif { grid-column: 1 / -1; }
+.finish-sheet { justify-items: center; }
+.finish-task { margin: 0; letter-spacing: 0.08em; text-align: center; }
+#finish-done[hidden] { display: none !important; }
 .sheet h2 { letter-spacing: 0.2em; }
 .field {
   display: flex;

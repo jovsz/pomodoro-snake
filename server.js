@@ -415,6 +415,9 @@ app.get("/api/metrics", async (req, res, next) => {
       return;
     }
     const zone = await knownZone(timeZone(req.query.tz));
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.day || "")) ? String(req.query.day) : "";
+    const activityFrom = day ? spanFrom : from;
+    const activityTo = day ? spanTo : to;
     const result = await pool.query(
       `SELECT
          COALESCE(NULLIF(s.mission_id, ''), 'title:' || s.title) AS group_id,
@@ -430,12 +433,13 @@ app.get("/api/metrics", async (req, res, next) => {
        LEFT JOIN missions m ON m.id = s.mission_id
        WHERE s.at >= $1 AND s.at < $2
          AND ((s.kind = 'block' AND s.phase = 'focus') OR s.kind = 'extra')
+         AND ($4 = '' OR to_char(timezone($3, to_timestamp(s.at / 1000.0)), 'YYYY-MM-DD') = $4)
        GROUP BY COALESCE(NULLIF(s.mission_id, ''), 'title:' || s.title)
        ORDER BY (
          COALESCE(SUM(s.seconds) FILTER (WHERE s.kind = 'block' AND s.phase = 'focus'), 0)
          + COALESCE(SUM(s.seconds) FILTER (WHERE s.kind = 'extra'), 0)
        ) DESC`,
-      [from, to],
+      [activityFrom, activityTo, zone, day],
     );
     const activities = result.rows.map((row) => {
       const blockSeconds = Number(row.block_seconds) || 0;
@@ -483,7 +487,43 @@ app.get("/api/metrics", async (req, res, next) => {
         addedSeconds: blockExtra + addedOnly,
       };
     }).filter((item) => item.seconds > 0);
-    res.json({ from, to, totals, activities, days, span: { from: spanFrom, to: spanTo } });
+    const entriesResult = await pool.query(
+      `SELECT
+         to_char(timezone($3, to_timestamp(s.at / 1000.0)), 'YYYY-MM-DD') AS day,
+         COALESCE(NULLIF(s.mission_id, ''), 'title:' || s.title) AS group_id,
+         COALESCE(MAX(m.title), MAX(s.title)) AS title,
+         MAX(m.estimate) AS estimate,
+         MAX(m.status) AS status,
+         MAX(m.priority) AS priority,
+         COALESCE(SUM(s.seconds) FILTER (WHERE s.kind = 'block' AND s.phase = 'focus'), 0)::int AS block_seconds,
+         COALESCE(SUM(LEAST(s.extra_seconds, s.seconds)) FILTER (WHERE s.kind = 'block' AND s.phase = 'focus'), 0)::int AS block_extra,
+         COALESCE(SUM(s.seconds) FILTER (WHERE s.kind = 'extra'), 0)::int AS added_only,
+         COALESCE(COUNT(*) FILTER (WHERE s.kind = 'block' AND s.phase = 'focus'), 0)::int AS blocks
+       FROM sessions s
+       LEFT JOIN missions m ON m.id = s.mission_id
+       WHERE s.at >= $1 AND s.at < $2
+         AND ((s.kind = 'block' AND s.phase = 'focus') OR s.kind = 'extra')
+       GROUP BY 1, 2`,
+      [spanFrom, spanTo, zone],
+    );
+    const entries = entriesResult.rows.map((row) => {
+      const blockSeconds = Number(row.block_seconds) || 0;
+      const addedOnly = Number(row.added_only) || 0;
+      const blockExtra = Number(row.block_extra) || 0;
+      return {
+        day: row.day,
+        missionId: String(row.group_id).startsWith("title:") ? null : row.group_id,
+        title: row.title || "Sin blanco",
+        estimate: row.estimate == null ? null : Number(row.estimate),
+        status: row.status,
+        priority: row.priority,
+        blocks: Number(row.blocks) || 0,
+        seconds: blockSeconds + addedOnly,
+        addedSeconds: blockExtra + addedOnly,
+      };
+    }).filter((item) => item.seconds > 0);
+    res.set("Cache-Control", "no-store");
+    res.json({ from, to, day, totals, activities, days, entries, span: { from: spanFrom, to: spanTo } });
   } catch (error) {
     next(error);
   }

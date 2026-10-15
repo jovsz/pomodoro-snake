@@ -199,6 +199,27 @@
         <span>140–142 MHz</span>
       </div>
 
+      <div class="modal" id="finish" hidden>
+        <div class="sheet frame finish-sheet" role="dialog" aria-modal="true" aria-labelledby="finish-title">
+          <header>
+            <h2 id="finish-title" data-i18n="finish.title">PHASE CLEAR</h2>
+            <p class="dim" data-i18n="finish.ask">Is the task finished?</p>
+          </header>
+          <img id="finish-gif" class="banner-gif" alt="" hidden>
+          <p id="finish-task" class="finish-task"></p>
+          <div class="sheet-actions">
+            <button type="button" class="primary" id="finish-done" data-i18n="finish.done">DONE</button>
+            <button type="button" id="finish-later" data-i18n="finish.later">NOT YET</button>
+          </div>
+          <div class="extend finish-extend">
+            <span data-i18n="extend">EXTEND</span>
+            <button type="button" data-finish-extend="5">+5</button>
+            <button type="button" data-finish-extend="10">+10</button>
+            <button type="button" data-finish-extend="15">+15</button>
+          </div>
+        </div>
+      </div>
+
       <div class="modal" id="settings" hidden>
         <form class="sheet frame" id="settings-form" autocomplete="off">
           <header>
@@ -241,6 +262,6 @@
   <div class="scanlines" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
   <noscript data-i18n="noscript">Enable JavaScript to use the CODEC link.</noscript>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261014b"></script>
 </body>
 </html>

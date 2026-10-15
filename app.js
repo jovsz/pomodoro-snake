@@ -188,6 +188,11 @@ const COPY = {
     "say.unlocked": "Target released.",
     "say.saved.running": "Parameters saved. The running clock does not change.",
     "say.saved": "Parameters saved.",
+    "finish.title": "PHASE CLEAR",
+    "finish.ask": "Is the task finished?",
+    "finish.done": "DONE",
+    "finish.later": "NOT YET",
+    "finish.none": "This block has no target.",
     "db.offline": "No link to the database.",
   },
   es: {
@@ -357,6 +362,11 @@ const COPY = {
     "say.unlocked": "Blanco liberado.",
     "say.saved.running": "Parámetros grabados. El reloj en curso no cambia.",
     "say.saved": "Parámetros grabados.",
+    "finish.title": "FASE CLEAR",
+    "finish.ask": "¿Terminaste la tarea?",
+    "finish.done": "LISTA",
+    "finish.later": "AÚN NO",
+    "finish.none": "Este bloque no tiene blanco.",
     "db.offline": "Sin enlace con la base de datos.",
   },
 };
@@ -456,6 +466,7 @@ function setLang(next) {
   paintClock();
   $("#codec").textContent = dbOnline ? phaseText(state.phase).line : t("db.offline");
   if (!$("#settings").hidden) openSettings();
+  if (ui.finishOpen) paintFinish();
 }
 
 const DEFAULTS = {
@@ -511,6 +522,8 @@ const ui = {
   metricsLoading: false,
   metricsError: false,
   adding: null,
+  finishOpen: false,
+  finishFromLoad: false,
 };
 
 let state = structuredClone(DEFAULTS);
@@ -691,21 +704,58 @@ function addMinutes(id, minutes) {
 
 let metricsToken = 0;
 
+function entriesCoverMonth(month) {
+  const span = heatWindow(month);
+  return Boolean(ui.metrics?.entries)
+    && Number(ui.metrics.span?.from) === span.from
+    && Number(ui.metrics.span?.to) === span.to;
+}
+
+function aggregateEntries(rows) {
+  const grouped = new Map();
+  rows.forEach((row) => {
+    const key = row.missionId || `title:${row.title}`;
+    const current = grouped.get(key);
+    if (!current) {
+      grouped.set(key, { ...row });
+      return;
+    }
+    current.seconds += row.seconds;
+    current.addedSeconds += row.addedSeconds;
+    current.blocks += row.blocks;
+  });
+  return [...grouped.values()].filter((row) => row.seconds > 0).sort((a, b) => b.seconds - a.seconds);
+}
+
+function rowsForSelection() {
+  const month = ui.month || currentMonthKey();
+  if (!entriesCoverMonth(month)) return null;
+  const picked = ui.day && ui.day.slice(0, 7) === month
+    ? ui.metrics.entries.filter((row) => row.day === ui.day)
+    : ui.metrics.entries.filter((row) => String(row.day).slice(0, 7) === month);
+  return aggregateEntries(picked);
+}
+
 async function loadMetrics() {
   const token = ++metricsToken;
   const month = ui.month || currentMonthKey();
   ui.month = month;
   if (ui.day && ui.day.slice(0, 7) !== month) ui.day = "";
   const span = heatWindow(month);
-  const focus = ui.day
-    ? { from: parseDay(ui.day).getTime(), to: addDays(parseDay(ui.day), 1).getTime() }
-    : monthRange(month);
-  const { from, to } = focus;
-  ui.metricsLoading = true;
+  const range = monthRange(month);
+  const covered = entriesCoverMonth(month);
+  ui.metricsLoading = !covered;
   ui.metricsError = false;
   if (ui.filter === "metrics") renderMetrics();
   try {
-    const response = await fetch(`/api/metrics?from=${from}&to=${to}&spanFrom=${span.from}&spanTo=${span.to}&tz=${encodeURIComponent(timeZone())}`);
+    const params = new URLSearchParams({
+      from: String(range.from),
+      to: String(range.to),
+      spanFrom: String(span.from),
+      spanTo: String(span.to),
+      tz: timeZone(),
+    });
+    const response = await fetch(`/api/metrics?${params}`, { cache: "no-store" });
     if (!response.ok) throw new Error(String(response.status));
     const data = await response.json();
     if (token !== metricsToken) return;
@@ -713,9 +763,11 @@ async function loadMetrics() {
     ui.metricsLoading = false;
   } catch {
     if (token !== metricsToken) return;
-    ui.metrics = null;
+    if (!covered) {
+      ui.metrics = null;
+      ui.metricsError = true;
+    }
     ui.metricsLoading = false;
-    ui.metricsError = true;
   }
   if (ui.filter === "metrics") renderMetrics();
 }
@@ -1058,7 +1110,7 @@ function pushHistory(entry) {
   if (state.history.length > 400) state.history.splice(0, state.history.length - 400);
 }
 
-function recordFocus(endedAt) {
+function recordFocus(endedAt, opts = {}) {
   const ended = endedAt || Date.now();
   const key = keyFromDate(new Date(ended));
   const seconds = state.planned || phaseSeconds("focus");
@@ -1076,7 +1128,8 @@ function recordFocus(endedAt) {
   if (mission) {
     title = mission.title;
     mission.donePoms += 1;
-    if (mission.status !== "done" && state.settings.autoClose && mission.donePoms >= mission.estimate) {
+    const met = !opts.keepOpen && state.settings.autoClose && mission.donePoms >= mission.estimate;
+    if (mission.status !== "done" && (opts.forceClose || met)) {
       mission.status = "done";
       closed = true;
       state.activeMissionId = null;
@@ -1097,10 +1150,10 @@ function recordFocus(endedAt) {
   return { closed, title, extraSeconds };
 }
 
-function goNext({ record, endedAt }) {
+function goNext({ record, endedAt, forceClose, keepOpen }) {
   const finished = state.phase;
   let result = null;
-  if (record && finished === "focus") result = recordFocus(endedAt);
+  if (record && finished === "focus") result = recordFocus(endedAt, { forceClose, keepOpen });
   else if (record) {
     pushHistory({
       phase: finished,
@@ -1136,16 +1189,87 @@ function goNext({ record, endedAt }) {
   return { finished, result };
 }
 
-function announce(finished, result) {
+function announce(finished, result, opts = {}) {
   const copy = phaseText(finished);
   const [title, sub] = copy.banner;
   const line = result?.closed
     ? t("say.objective", { title: result.title })
     : (result?.extraSeconds ? t("say.extra.included", { sub, time: fmtSpan(result.extraSeconds) }) : sub);
-  showBanner(title, line, { salute: finished === "focus" });
+  showBanner(title, line, { salute: finished === "focus" && opts.salute !== false });
   say(result?.closed ? t("say.objective.short", { title: result.title }) : sub);
   playClear(finished);
   notify(title, line);
+}
+
+function paintFinish() {
+  const mission = byId(state.activeMissionId);
+  const open = mission && mission.status !== "done";
+  $("#finish-task").textContent = open ? mission.title : t("finish.none");
+  const done = $("#finish-done");
+  done.hidden = !open;
+  const gif = $("#finish-gif");
+  gif.hidden = false;
+  gif.alt = t("salute.alt");
+  if (!gif.getAttribute("src")) gif.src = `boss-clear.gif?t=${Date.now()}`;
+}
+
+function closeFinish() {
+  ui.finishOpen = false;
+  $("#finish").hidden = true;
+  const gif = $("#finish-gif");
+  gif.hidden = true;
+  gif.removeAttribute("src");
+}
+
+function askFinish(opts = {}) {
+  if (state.phase !== "focus" || ui.finishOpen) return;
+  ui.finishOpen = true;
+  ui.finishFromLoad = Boolean(opts.fromLoad);
+  cancelAuto();
+  if (!$("#settings").hidden) closeSettings();
+  state.remaining = 0;
+  paintTime();
+  paintFinish();
+  $("#finish").hidden = false;
+  ($("#finish-done").hidden ? $("#finish-later") : $("#finish-done")).focus();
+  playClear("focus");
+  notify(t("finish.title"), t("finish.ask"));
+}
+
+function resumeFocus(minutes) {
+  const room = 180 * 60 - (state.planned || 0);
+  if (room < 60) {
+    say(t("say.extend.max"));
+    return false;
+  }
+  const seconds = Math.min(minutes * 60, room);
+  state.remaining = seconds;
+  state.planned = (state.planned || 0) + seconds;
+  state.blockExtra = (state.blockExtra || 0) + seconds;
+  state.running = true;
+  state.endsAt = Date.now() + seconds * 1000;
+  save();
+  renderStatic();
+  paintTime();
+  say(t("say.extend.added", { time: fmtSpan(seconds) }));
+  return true;
+}
+
+function chooseFinish(action, minutes) {
+  if (!ui.finishOpen) return;
+  const fromLoad = ui.finishFromLoad;
+  if (action === "extend") {
+    if (!resumeFocus(minutes)) return;
+    closeFinish();
+    return;
+  }
+  closeFinish();
+  completePhase({
+    fromLoad,
+    forceClose: action === "done",
+    keepOpen: action === "later",
+    salute: false,
+  });
 }
 
 function completePhase(opts = {}) {
@@ -1155,9 +1279,14 @@ function completePhase(opts = {}) {
   const endedAt = state.endsAt || Date.now();
   state.running = false;
   state.endsAt = null;
-  const { finished, result } = goNext({ record: true, endedAt });
+  const { finished, result } = goNext({
+    record: true,
+    endedAt,
+    forceClose: opts.forceClose,
+    keepOpen: opts.keepOpen,
+  });
   save();
-  announce(finished, result);
+  announce(finished, result, { salute: opts.salute });
   renderStatic();
   renderLists();
   paintTime();
@@ -1733,22 +1862,22 @@ function renderMetrics() {
   if (next) next.disabled = month >= currentMonthKey();
   const list = $("#list");
   list.replaceChildren();
-  if (ui.metricsLoading && !ui.metrics) {
+  const rows = rowsForSelection();
+  if (!rows) {
+    if (ui.metrics?.days) renderHeat(list);
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = t("metric.loading");
-    list.append(empty);
-    return;
-  }
-  if (ui.metricsError || !ui.metrics) {
-    const empty = document.createElement("li");
-    empty.className = "empty";
-    empty.textContent = t("metric.error");
+    empty.textContent = ui.metricsError && !ui.metricsLoading ? t("metric.error") : t("metric.loading");
     list.append(empty);
     return;
   }
   renderHeat(list);
-  const totals = ui.metrics.totals;
+  const totals = rows.reduce((sum, item) => ({
+    seconds: sum.seconds + item.seconds,
+    addedSeconds: sum.addedSeconds + item.addedSeconds,
+    blocks: sum.blocks + item.blocks,
+    activities: rows.length,
+  }), { seconds: 0, addedSeconds: 0, blocks: 0, activities: 0 });
   const summary = document.createElement("li");
   summary.className = "metric-summary";
   [
@@ -1766,15 +1895,16 @@ function renderMetrics() {
     summary.append(cell);
   });
   list.append(summary);
-  if (!ui.metrics.activities.length) {
+  if (!rows.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
     empty.textContent = ui.day ? t("metric.emptyDay") : t("metric.emptyMonth");
     list.append(empty);
+    revealSelectedDay(list);
     return;
   }
-  const max = Math.max(...ui.metrics.activities.map((item) => item.seconds), 1);
-  ui.metrics.activities.forEach((item) => {
+  const max = Math.max(...rows.map((item) => item.seconds), 1);
+  rows.forEach((item) => {
     const li = document.createElement("li");
     li.className = "metric";
     const title = document.createElement("strong");
@@ -1789,6 +1919,20 @@ function renderMetrics() {
     li.append(title, meta, bar);
     list.append(li);
   });
+  revealSelectedDay(list);
+}
+
+function revealSelectedDay(list) {
+  if (!ui.day) {
+    ui.scrolledDay = "";
+    return;
+  }
+  if (ui.day === ui.scrolledDay) return;
+  const summary = list.querySelector(".metric-summary");
+  if (!summary) return;
+  ui.scrolledDay = ui.day;
+  const top = summary.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+  list.scrollTop = Math.max(0, top);
 }
 
 function renderLists() {
@@ -1939,7 +2083,10 @@ function tick() {
   if (state.running && state.endsAt) {
     const left = Math.max(0, Math.round((state.endsAt - Date.now()) / 1000));
     if (left <= 0) {
-      if (ready) completePhase();
+      if (ready && !ui.finishOpen) {
+        if (state.phase === "focus") askFinish();
+        else completePhase();
+      }
       return;
     }
     state.remaining = left;
@@ -2031,7 +2178,8 @@ function armReady() {
   ready = true;
   if (expiredOnLoad) {
     expiredOnLoad = false;
-    completePhase({ fromLoad: true });
+    if (state.phase === "focus") askFinish({ fromLoad: true });
+    else completePhase({ fromLoad: true });
   }
 }
 
@@ -2063,6 +2211,11 @@ function bind() {
     if (event.target === $("#settings")) closeSettings();
   });
   $("#settings-form").addEventListener("submit", applySettings);
+  $("#finish-done").addEventListener("click", () => chooseFinish("done"));
+  $("#finish-later").addEventListener("click", () => chooseFinish("later"));
+  document.querySelectorAll("[data-finish-extend]").forEach((button) => {
+    button.addEventListener("click", () => chooseFinish("extend", Number(button.dataset.finishExtend)));
+  });
 
   $("#est-dec").addEventListener("click", () => {
     ui.estimate = Math.max(1, ui.estimate - 1);
@@ -2197,6 +2350,7 @@ function bind() {
       return;
     }
     if (typingTarget(event.target)) return;
+    if (!$("#finish").hidden) return;
     if (!$("#settings").hidden) {
       if (event.key === "Escape") closeSettings();
       return;
