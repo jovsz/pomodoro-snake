@@ -467,12 +467,15 @@ body[data-alert="caution"] .alert-tag { color: var(--amber); }
 }
 
 .controls, .inter, .composer-row, .tabs, .sheet-actions, .status {
+  flex-wrap: wrap;
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
 .controls button, .composer .primary, .sheet-actions .primary { flex: 1; }
+#clear-task { flex: 1 1 100%; }
+#clear-task[hidden], #finish-resume[hidden], .finish-extend[hidden] { display: none !important; }
 
 .freqs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 

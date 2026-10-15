@@ -91,6 +91,7 @@
               <button type="button" class="primary" id="toggle">START</button>
               <button type="button" id="abort" data-i18n="abort">ABORT</button>
               <button type="button" id="skip" data-i18n="skip">SKIP</button>
+              <button type="button" id="clear-task" data-i18n="finish.early" hidden>TASK DONE</button>
             </div>
 
             <div class="freqs" role="tablist" data-i18n-aria="aria.phase" aria-label="Phase">
@@ -210,8 +211,9 @@
           <div class="sheet-actions">
             <button type="button" class="primary" id="finish-done" data-i18n="finish.done">DONE</button>
             <button type="button" id="finish-later" data-i18n="finish.later">NOT YET</button>
+            <button type="button" id="finish-resume" data-i18n="finish.resume" hidden>RESUME</button>
           </div>
-          <div class="extend finish-extend">
+          <div class="extend finish-extend" id="finish-extend">
             <span data-i18n="extend">EXTEND</span>
             <button type="button" data-finish-extend="5">+5</button>
             <button type="button" data-finish-extend="10">+10</button>
@@ -262,6 +264,6 @@
   <div class="scanlines" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
   <noscript data-i18n="noscript">Enable JavaScript to use the CODEC link.</noscript>
-  <script src="app.js?v=20261014b"></script>
+  <script src="app.js?v=20261015b"></script>
 </body>
 </html>

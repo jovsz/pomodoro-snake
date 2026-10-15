@@ -193,6 +193,8 @@ const COPY = {
     "finish.done": "DONE",
     "finish.later": "NOT YET",
     "finish.none": "This block has no target.",
+    "finish.early": "TASK DONE",
+    "finish.resume": "RESUME",
     "db.offline": "No link to the database.",
   },
   es: {
@@ -367,6 +369,8 @@ const COPY = {
     "finish.done": "LISTA",
     "finish.later": "AÚN NO",
     "finish.none": "Este bloque no tiene blanco.",
+    "finish.early": "TAREA LISTA",
+    "finish.resume": "SEGUIR",
     "db.offline": "Sin enlace con la base de datos.",
   },
 };
@@ -524,6 +528,8 @@ const ui = {
   adding: null,
   finishOpen: false,
   finishFromLoad: false,
+  finishEarly: false,
+  finishHeld: null,
 };
 
 let state = structuredClone(DEFAULTS);
@@ -1113,47 +1119,48 @@ function pushHistory(entry) {
 function recordFocus(endedAt, opts = {}) {
   const ended = endedAt || Date.now();
   const key = keyFromDate(new Date(ended));
-  const seconds = state.planned || phaseSeconds("focus");
+  const seconds = opts.seconds != null ? Math.max(0, opts.seconds) : (state.planned || phaseSeconds("focus"));
   const extraSeconds = Math.min(seconds, state.blockExtra || 0);
-  if (key === todayKey()) {
-    state.focusCountToday += 1;
-    state.focusSecondsToday += seconds;
-  }
-  noteFocusDay(key);
-  state.lifetimeFocus += 1;
-
   let title = "Sin blanco";
   let closed = false;
   const mission = byId(state.activeMissionId);
+  if (mission) title = mission.title;
+  if (seconds > 0) {
+    if (key === todayKey()) {
+      state.focusCountToday += 1;
+      state.focusSecondsToday += seconds;
+    }
+    noteFocusDay(key);
+    state.lifetimeFocus += 1;
+    if (mission) mission.donePoms += 1;
+    pushHistory({
+      phase: "focus",
+      title,
+      seconds,
+      at: ended,
+      missionId: mission?.id || null,
+      kind: "block",
+      extraSeconds,
+      internal: state.sessionInterrupts.internal,
+      external: state.sessionInterrupts.external,
+    });
+  }
   if (mission) {
-    title = mission.title;
-    mission.donePoms += 1;
-    const met = !opts.keepOpen && state.settings.autoClose && mission.donePoms >= mission.estimate;
+    const met = seconds > 0 && !opts.keepOpen && state.settings.autoClose && mission.donePoms >= mission.estimate;
     if (mission.status !== "done" && (opts.forceClose || met)) {
       mission.status = "done";
       closed = true;
       state.activeMissionId = null;
     }
   }
-  pushHistory({
-    phase: "focus",
-    title,
-    seconds,
-    at: ended,
-    missionId: mission?.id || null,
-    kind: "block",
-    extraSeconds,
-    internal: state.sessionInterrupts.internal,
-    external: state.sessionInterrupts.external,
-  });
   state.blockExtra = 0;
   return { closed, title, extraSeconds };
 }
 
-function goNext({ record, endedAt, forceClose, keepOpen }) {
+function goNext({ record, endedAt, forceClose, keepOpen, seconds }) {
   const finished = state.phase;
   let result = null;
-  if (record && finished === "focus") result = recordFocus(endedAt, { forceClose, keepOpen });
+  if (record && finished === "focus") result = recordFocus(endedAt, { forceClose, keepOpen, seconds });
   else if (record) {
     pushHistory({
       phase: finished,
@@ -1207,14 +1214,43 @@ function paintFinish() {
   $("#finish-task").textContent = open ? mission.title : t("finish.none");
   const done = $("#finish-done");
   done.hidden = !open;
+  const resume = $("#finish-resume");
+  if (resume) resume.hidden = !ui.finishEarly;
+  const extend = $("#finish-extend");
+  if (extend) extend.hidden = ui.finishEarly;
   const gif = $("#finish-gif");
   gif.hidden = false;
   gif.alt = t("salute.alt");
   if (!gif.getAttribute("src")) gif.src = `boss-clear.gif?t=${Date.now()}`;
 }
 
+function holdClock() {
+  const left = state.running && state.endsAt
+    ? Math.max(0, Math.round((state.endsAt - Date.now()) / 1000))
+    : state.remaining;
+  ui.finishHeld = { running: Boolean(state.running), remaining: left };
+  state.running = false;
+  state.endsAt = null;
+  state.remaining = left;
+  save();
+}
+
+function restoreHeld() {
+  const held = ui.finishHeld;
+  ui.finishHeld = null;
+  if (!held) return;
+  state.remaining = held.remaining;
+  state.running = Boolean(held.running && held.remaining > 0);
+  state.endsAt = state.running ? Date.now() + held.remaining * 1000 : null;
+  save();
+  renderStatic();
+  paintTime();
+}
+
 function closeFinish() {
   ui.finishOpen = false;
+  ui.finishEarly = false;
+  ui.finishHeld = null;
   $("#finish").hidden = true;
   const gif = $("#finish-gif");
   gif.hidden = true;
@@ -1225,9 +1261,14 @@ function askFinish(opts = {}) {
   if (state.phase !== "focus" || ui.finishOpen) return;
   ui.finishOpen = true;
   ui.finishFromLoad = Boolean(opts.fromLoad);
+  ui.finishEarly = Boolean(opts.early);
   cancelAuto();
   if (!$("#settings").hidden) closeSettings();
-  state.remaining = 0;
+  if (opts.early) holdClock();
+  else {
+    ui.finishHeld = null;
+    state.remaining = 0;
+  }
   paintTime();
   paintFinish();
   $("#finish").hidden = false;
@@ -1258,9 +1299,32 @@ function resumeFocus(minutes) {
 function chooseFinish(action, minutes) {
   if (!ui.finishOpen) return;
   const fromLoad = ui.finishFromLoad;
+  const early = ui.finishEarly;
   if (action === "extend") {
-    if (!resumeFocus(minutes)) return;
+    if (early || !resumeFocus(minutes)) return;
     closeFinish();
+    return;
+  }
+  if (action === "resume") {
+    restoreHeld();
+    closeFinish();
+    return;
+  }
+  const spent = early ? Math.max(0, (state.planned || phaseSeconds("focus")) - state.remaining) : null;
+  if (early && !(spent > 0)) {
+    restoreHeld();
+    closeFinish();
+    if (action === "done") {
+      const mission = byId(state.activeMissionId);
+      if (mission && mission.status !== "done") {
+        mission.status = "done";
+        state.activeMissionId = null;
+        save();
+        say(t("say.done"));
+        renderStatic();
+        renderLists();
+      }
+    }
     return;
   }
   closeFinish();
@@ -1269,6 +1333,7 @@ function chooseFinish(action, minutes) {
     forceClose: action === "done",
     keepOpen: action === "later",
     salute: false,
+    seconds: spent == null ? undefined : spent,
   });
 }
 
@@ -1284,6 +1349,7 @@ function completePhase(opts = {}) {
     endedAt,
     forceClose: opts.forceClose,
     keepOpen: opts.keepOpen,
+    seconds: opts.seconds,
   });
   save();
   announce(finished, result, { salute: opts.salute });
@@ -1843,7 +1909,7 @@ function renderHeat(list) {
   legend.append(more);
   item.append(total, board, legend);
   list.append(item);
-  const anchor = grid.querySelector(".is-day") || grid.querySelector(".is-month") || current;
+  const anchor = grid.querySelector(".is-day") || current;
   if (anchor) {
     const left = anchor.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
     scroller.scrollLeft = Math.max(0, left - 28);
@@ -2044,6 +2110,11 @@ function renderStatic() {
 
   $("#int-count").textContent = `INT ${pad(state.sessionInterrupts.internal)}`;
   $("#ext-count").textContent = `EXT ${pad(state.sessionInterrupts.external)}`;
+  const clearTask = $("#clear-task");
+  if (clearTask) {
+    const openTarget = Boolean(mission && mission.status !== "done");
+    clearTask.hidden = !(state.phase === "focus" && openTarget);
+  }
   const canMark = state.running && state.phase === "focus";
   $("#btn-int").disabled = !canMark;
   $("#btn-ext").disabled = !canMark;
@@ -2211,8 +2282,10 @@ function bind() {
     if (event.target === $("#settings")) closeSettings();
   });
   $("#settings-form").addEventListener("submit", applySettings);
+  $("#clear-task").addEventListener("click", () => askFinish({ early: true }));
   $("#finish-done").addEventListener("click", () => chooseFinish("done"));
   $("#finish-later").addEventListener("click", () => chooseFinish("later"));
+  $("#finish-resume").addEventListener("click", () => chooseFinish("resume"));
   document.querySelectorAll("[data-finish-extend]").forEach((button) => {
     button.addEventListener("click", () => chooseFinish("extend", Number(button.dataset.finishExtend)));
   });
@@ -2255,7 +2328,9 @@ function bind() {
     ui.filter = "metrics";
     ui.editing = null;
     ui.adding = null;
-    if (!ui.month) ui.month = currentMonthKey();
+    ui.month = currentMonthKey();
+    ui.day = todayKey();
+    ui.scrolledDay = "";
     renderLists();
     loadMetrics();
   });
@@ -2350,7 +2425,10 @@ function bind() {
       return;
     }
     if (typingTarget(event.target)) return;
-    if (!$("#finish").hidden) return;
+    if (!$("#finish").hidden) {
+      if (event.key === "Escape" && ui.finishEarly) chooseFinish("resume");
+      return;
+    }
     if (!$("#settings").hidden) {
       if (event.key === "Escape") closeSettings();
       return;
